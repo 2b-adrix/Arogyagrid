@@ -1,0 +1,135 @@
+<mxfile host="app.diagrams.net" modified="2026-10-16T12:00:00.000Z" agent="ArogyaGrid Architect" etag="ArogyaGridv1" version="21.0.0" type="device">
+  <diagram id="arogyagrid-architecture" name="ArogyaGrid Complete System Design">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ================= SYSTEM CONTAINERS ================= -->
+
+        <!-- 1. ANDROID CLIENT CONTAINER -->
+        <mxCell id="c_android" value="ANDROID CLIENT LAYER (Kotlin + Jetpack Compose)" style="swimlane;whiteSpace=wrap;html=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;fillColor=#E0F2F1;strokeColor=#00695C;fontStyle=1;fontSize=14;fontColor=#004D40;" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="380" height="740" as="geometry" />
+        </mxCell>
+
+        <!-- 2. NETWORK & TRANSPORT CONTAINER -->
+        <mxCell id="c_network" value="NETWORK &amp; API TRANSPORT LAYER" style="swimlane;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#37474F;fontStyle=1;fontSize=14;fontColor=#263238;" vertex="1" parent="1">
+          <mxGeometry x="460" y="40" width="240" height="740" as="geometry" />
+        </mxCell>
+
+        <!-- 3. NODE.JS BACKEND CONTAINER -->
+        <mxCell id="c_backend" value="NODE.JS &amp; EXPRESS BACKEND SERVER (Port 5000 / Render)" style="swimlane;whiteSpace=wrap;html=1;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;fillColor=#E8F5E9;strokeColor=#2E7D32;fontStyle=1;fontSize=14;fontColor=#1B5E20;" vertex="1" parent="1">
+          <mxGeometry x="740" y="40" width="420" height="740" as="geometry" />
+        </mxCell>
+
+        <!-- 4. DATABASE & AI LAYER CONTAINER -->
+        <mxCell id="c_cloud" value="CLOUD DATABASE &amp; AI INTELLIGENCE LAYER" style="swimlane;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E65100;fontStyle=1;fontSize=14;fontColor=#BF360C;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="40" width="360" height="740" as="geometry" />
+        </mxCell>
+
+        <!-- ================= ANDROID INTERNAL COMPONENTS ================= -->
+
+        <mxCell id="ui_views" value="UI Presentation Views (Jetpack Compose)&#xa;--------------------------------------&#xa;• Center Screen (Healthcare Command Dashboard)&#xa;• Risk Screen (Stockout Probability &amp; Alerts)&#xa;• Inventory Screen (Batch Balances &amp; Transactions)&#xa;• Approval Screen (Inter-Facility Redistribution)&#xa;• Forecast Screen (7-Day Demand Curve Chart)&#xa;• AI Copilot Assistant Screen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#B2DFDB;strokeColor=#00796B;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="90" width="340" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="viewmodels" value="ViewModels &amp; Use Cases Layer&#xa;-----------------------------&#xa;• DashboardViewModel (GetDashboardDataUseCase)&#xa;• InventoryViewModel (RecordTransactionUseCase)&#xa;• RiskViewModel (GetRisksUseCase)&#xa;• RedistributionViewModel (ApproveTransferUseCase)&#xa;• AiAssistantViewModel (AskGeminiUseCase)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#80CBC4;strokeColor=#004D40;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="270" width="340" height="130" as="geometry" />
+        </mxCell>
+
+        <mxCell id="repositories" value="Repository Data Layer&#xa;---------------------&#xa;• FacilityRepositoryImpl&#xa;• InventoryRepositoryImpl&#xa;• RiskRepositoryImpl&#xa;• RedistributionRepositoryImpl&#xa;• AiRepositoryImpl" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#4DB6AC;strokeColor=#004D40;fontSize=11;fontColor=#FFFFFF;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="430" width="340" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="room_db" value="Local Cache: Room SQLite Database&#xa;---------------------------------&#xa;• FacilityDao | InventoryDao | RiskDao&#xa;• AlertDao | RedistributionDao&#xa;* Ensures instant UI rendering &amp; offline capability" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00897B;strokeColor=#004D40;fontSize=11;fontColor=#FFFFFF;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="580" width="340" height="80" as="geometry" />
+        </mxCell>
+
+        <mxCell id="retrofit" value="Network Engine: Retrofit 2 + OkHttp&#xa;----------------------------------&#xa;• ApiService.kt&#xa;• NetworkClient.kt (BaseUrl: 127.0.0.1:5000 / Render)&#xa;• MockApiInterceptor (Bypassed for live /api/ routes)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#00695C;strokeColor=#004D40;fontSize=11;fontColor=#FFFFFF;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="680" width="340" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ================= NETWORK CONNECTIONS ================= -->
+
+        <mxCell id="adb_tunnel" value="ADB Reverse Tunnel&#xa;(tcp:5000 ➔ tcp:5000)&#xa;OR&#xa;HTTPS Render Cloud" style="rhombus;whiteSpace=wrap;html=1;fillColor=#CFD8DC;strokeColor=#455A64;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="490" y="320" width="180" height="160" as="geometry" />
+        </mxCell>
+
+        <!-- ================= BACKEND INTERNAL COMPONENTS ================= -->
+
+        <mxCell id="express_app" value="Express.js Application (index.js)&#xa;-------------------------------&#xa;• CORS &amp; JSON Body Parser&#xa;• Port 0.0.0.0:5000 Listener" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#388E3C;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="90" width="380" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="express_routes" value="Express API Routers (/api/)&#xa;--------------------------&#xa;• authRouter (/api/auth/session)&#xa;• facilitiesRouter (/api/facilities &amp; /alerts)&#xa;• suppliesRouter (/api/supplies &amp; /transaction)&#xa;• risksRouter (/api/risks - Mathematical Engine)&#xa;• redistributionRouter (/api/redistribution/approve/reject)&#xa;• aiRouter (/api/ai/chat - Context Integrator)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#A5D6A7;strokeColor=#2E7D32;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="170" width="380" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="mongoose_odm" value="Mongoose ODM Schemas &amp; Models&#xa;----------------------------&#xa;• User.js | Facility.js | Alert.js&#xa;• Supply.js | Medicine.js | InventoryBalance.js&#xa;• RiskAssessment.js | Redistribution.js | DemandForecast.js" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#81C784;strokeColor=#1B5E20;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="340" width="380" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gemini_sdk" value="Google Generative AI SDK (@google/generative-ai)&#xa;------------------------------------------------&#xa;• Automatic Multi-Model Fallback Loop:&#xa;  [gemini-2.0-flash ➔ gemini-1.5-flash ➔ gemini-pro]&#xa;• Multi-Collection Context Injection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1BEE7;strokeColor=#7B1FA2;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="460" width="380" height="90" as="geometry" />
+        </mxCell>
+
+        <mxCell id="seed_script" value="Master Database Seeder (seedAll.js)&#xa;-----------------------------------&#xa;• Seeds 50 CSV Medical Supplies&#xa;• Seeds 4 Jaipur District Hospitals &amp; PHCs&#xa;• Seeds System Alerts &amp; Transfer Recommendations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#C8E6C9;strokeColor=#2E7D32;fontSize=11;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="760" y="570" width="380" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- ================= CLOUD DATABASE & AI ================= -->
+
+        <mxCell id="mongo_atlas" value="MongoDB Atlas Cloud Cluster&#xa;--------------------------&#xa;Database: inventory_db&#xa;&#xa;Collections:&#xa;• supplies (50 items)&#xa;• facilities (Jaipur Hospitals)&#xa;• alerts (Stock Warnings)&#xa;• redistributions (Transfer Requests)&#xa;• risks (Stockout Scores)&#xa;• medicines &amp; inventory_balances&#xa;• users (Command Center Accounts)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#FFE0B2;strokeColor=#F57C00;fontSize=11;align=left;spacingLeft=15;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="120" width="320" height="280" as="geometry" />
+        </mxCell>
+
+        <mxCell id="google_gemini" value="Google Gemini 1.5 / 2.0 Flash API&#xa;----------------------------------&#xa;Cloud Generative AI Engine&#xa;• Grounded Operational Explanations&#xa;• Conversational Buddy Intelligence" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#8E24AA;fontSize=11;align=center;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="470" width="340" height="180" as="geometry" />
+        </mxCell>
+
+        <!-- ================= CONNECTING ARROWS ================= -->
+
+        <mxCell id="e1" value="UI Events" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#004D40;" edge="1" parent="1" source="ui_views" target="viewmodels">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e2" value="Executes UseCases" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#004D40;" edge="1" parent="1" source="viewmodels" target="repositories">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e3" value="Reads/Writes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#004D40;" edge="1" parent="1" source="repositories" target="room_db">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e4" value="Network Calls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#004D40;" edge="1" parent="1" source="repositories" target="retrofit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e5" value="HTTP REST (JSON)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#00695C;strokeWidth=2;" edge="1" parent="1" source="retrofit" target="adb_tunnel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e6" value="Forward to Port 5000" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#2E7D32;strokeWidth=2;" edge="1" parent="1" source="adb_tunnel" target="express_routes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e7" value="Mongoose Queries" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#1B5E20;" edge="1" parent="1" source="express_routes" target="mongoose_odm">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e8" value="Reads/Writes Collections" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=#E65100;strokeWidth=2;" edge="1" parent="1" source="mongoose_odm" target="mongo_atlas">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e9" value="Injects Mongo DB Context" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#7B1FA2;" edge="1" parent="1" source="express_routes" target="gemini_sdk">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="e10" value="Generates Grounded Response" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthoLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;strokeColor=#8E24AA;strokeWidth=2;" edge="1" parent="1" source="gemini_sdk" target="google_gemini">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
