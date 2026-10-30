@@ -114,7 +114,8 @@ fun DashboardScreen(
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
             onSyncClick = { successToast = "Synced 24 facilities successfully with State Health Server." },
-            onCopilotClick = { onNavigateToScreen("ai_assistant") }
+            onCopilotClick = { onNavigateToScreen("ai_assistant") },
+            onProfileClick = { onNavigateToScreen("profile") }
         )
 
         if (summary == null) {
