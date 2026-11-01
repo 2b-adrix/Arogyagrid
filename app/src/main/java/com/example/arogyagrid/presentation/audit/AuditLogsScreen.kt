@@ -2,6 +2,7 @@ package com.example.arogyagrid.presentation.audit
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,12 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,24 +31,22 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.arogyagrid.domain.models.AuditLogItem
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.presentation.components.CommandTopBar
 import com.example.arogyagrid.presentation.theme.PrimaryTeal
 import com.example.arogyagrid.presentation.theme.SlateBorder
+import com.example.arogyagrid.presentation.theme.StatusRed
 import com.example.arogyagrid.presentation.theme.TextDark
 import com.example.arogyagrid.presentation.theme.TextMuted
+import com.example.arogyagrid.presentation.viewmodel.AuditViewModel
 
 @Composable
-fun AuditLogsScreen() {
+fun AuditLogsScreen(
+    viewModel: AuditViewModel = viewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-
-    val logs = listOf(
-        AuditLogItem("1", "12:05 Today", "TRANSFER_APPROVED", "District Officer", "REC-2026-001"),
-        AuditLogItem("2", "11:42 Today", "INVENTORY_UPDATED", "Facility Manager", "M-101 • Receive 100 units"),
-        AuditLogItem("3", "10:15 Today", "ALERT_RESOLVED", "District Officer", "ALT-1002"),
-        AuditLogItem("4", "09:30 Today", "FORECAST_RUN", "System", "forecast-v1.0"),
-        AuditLogItem("5", "Yesterday", "USER_ROLE_CHANGED", "State Admin", "officer_jaipur -> DISTRICT_OFFICER")
-    )
 
     Column(
         modifier = Modifier
@@ -53,11 +54,11 @@ fun AuditLogsScreen() {
             .background(MaterialTheme.colorScheme.background)
     ) {
         CommandTopBar(
-            roleLabel = "District Officer",
-            districtName = "Jaipur",
+            roleLabel = UserSession.userRole ?: "District Officer",
+            districtName = UserSession.userDistrict ?: "Jaipur",
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
-            onSyncClick = {}
+            onSyncClick = { viewModel.loadAuditLogs() }
         )
 
         Column(modifier = Modifier.padding(16.dp)) {
@@ -75,33 +76,60 @@ fun AuditLogsScreen() {
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(logs) { log ->
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(log.action, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = PrimaryTeal)
-                                Text(log.timeFormatted, fontSize = 11.sp, color = TextMuted)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Actor: ${log.actor}", fontSize = 11.sp, color = TextDark)
-                                Text(log.entityReference, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PrimaryTeal)
+                }
+            } else if (uiState.error != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = uiState.error ?: "Error loading audit logs", color = StatusRed, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = { viewModel.loadAuditLogs() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            } else {
+                val filteredLogs = uiState.items.filter {
+                    searchQuery.isBlank() ||
+                            it.action.contains(searchQuery, ignoreCase = true) ||
+                            (it.performedBy?.contains(searchQuery, ignoreCase = true) == true) ||
+                            (it.details?.contains(searchQuery, ignoreCase = true) == true)
+                }
+
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(filteredLogs, key = { it.id }) { log ->
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(log.action, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = PrimaryTeal)
+                                    Text(log.timestamp ?: "", fontSize = 11.sp, color = TextMuted)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Entity: ${log.entityType} ${log.entityId ?: ""}", fontSize = 11.sp, color = TextDark)
+                                    Text("By: ${log.performedBy ?: "System"} (${log.userRole ?: ""})", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
+                                }
+                                if (!log.details.isNullOrEmpty()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("Details: ${log.details}", fontSize = 11.sp, color = TextMuted)
+                                }
                             }
                         }
                     }

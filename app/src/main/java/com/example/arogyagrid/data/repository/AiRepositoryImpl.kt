@@ -3,23 +3,25 @@ package com.example.arogyagrid.data.repository
 import com.example.arogyagrid.core.ApiResponse
 import com.example.arogyagrid.data.local.AppDatabase
 import com.example.arogyagrid.data.remote.ApiService
+import com.example.arogyagrid.data.remote.NetworkClient
+import com.example.arogyagrid.data.remote.dto.AiChatRequest
 import com.example.arogyagrid.domain.repository.AiRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class AiRepositoryImpl(
-    private val db: AppDatabase,
-    private val apiService: ApiService
+    private val db: AppDatabase? = null,
+    private val apiService: ApiService = NetworkClient.apiService
 ) : AiRepository {
 
     override suspend fun askGemini(prompt: String, district: String?, facilityId: String?): ApiResponse<String> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.askGemini(com.example.arogyagrid.data.remote.AiChatRequest(prompt, district, facilityId))
-            if (response.success && response.data != null && !response.data.answer.isNullOrBlank()) {
+            val response = apiService.chatWithAi(AiChatRequest(prompt))
+            if (response.isSuccessful && response.body()?.success == true && response.body()?.data != null) {
                 ApiResponse(
                     success = true,
-                    data = response.data.answer,
-                    message = response.message
+                    data = response.body()!!.data!!.reply,
+                    message = response.body()?.message
                 )
             } else {
                 getFallbackExplanation(prompt, district)

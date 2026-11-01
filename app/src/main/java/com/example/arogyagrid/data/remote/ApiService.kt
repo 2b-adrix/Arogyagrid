@@ -1,93 +1,103 @@
 package com.example.arogyagrid.data.remote
 
-import com.example.arogyagrid.core.ApiResponse
-import com.example.arogyagrid.data.local.entities.AlertEntity
-import com.example.arogyagrid.data.local.entities.FacilityEntity
-import com.example.arogyagrid.data.local.entities.InventoryBalanceEntity
-import com.example.arogyagrid.data.local.entities.MedicineEntity
-import com.example.arogyagrid.data.local.entities.RedistributionEntity
-import com.example.arogyagrid.data.local.entities.RiskEntity
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-
-data class LoginRequest(val username: String, val passwordHash: String)
-data class LoginResponse(
-    val userId: String,
-    val username: String,
-    val fullName: String,
-    val role: String,
-    val district: String?,
-    val facilityId: String?,
-    val token: String
-)
-
-data class InventoryTransactionRequest(
-    val facilityId: String,
-    val medicineId: String,
-    val quantity: Int,
-    val type: String, // RECEIVE, ISSUE, ADJUSTMENT
-    val batchNumber: String?,
-    val expiryDate: String?
-)
-
-data class RegisterFacilityRequest(
-    val name: String,
-    val district: String,
-    val facilityType: String,
-    val latitude: Double,
-    val longitude: Double,
-    val totalBeds: Int,
-    val occupiedBeds: Int
-)
-
-data class AiChatRequest(val prompt: String, val contextDistrict: String? = null, val contextFacilityId: String? = null)
-data class AiChatResponse(val answer: String, val groundedData: String? = null)
+import com.example.arogyagrid.data.remote.dto.*
+import retrofit2.Response
+import retrofit2.http.*
 
 interface ApiService {
-    @POST("api/auth/session")
-    suspend fun login(@Body request: LoginRequest): ApiResponse<LoginResponse>
 
-    @GET("api/facilities")
-    suspend fun getFacilities(): ApiResponse<List<FacilityEntity>>
+    // ── Auth ──────────────────────────────────
+    @POST("auth/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): Response<ApiResponse<AuthResponse>>
 
-    @POST("api/facilities/register")
-    suspend fun registerFacility(@Body request: RegisterFacilityRequest): ApiResponse<FacilityEntity>
+    @POST("auth/register")
+    suspend fun register(
+        @Body request: RegisterRequest
+    ): Response<ApiResponse<AuthResponse>>
 
-    @GET("api/medicines")
-    suspend fun getMedicines(): ApiResponse<List<MedicineEntity>>
+    // ── Dashboard ─────────────────────────────
+    @GET("dashboard")
+    suspend fun getDashboard(
+        @Query("district") district: String? = null
+    ): Response<ApiResponse<DashboardSummaryResponse>>
 
-    @GET("api/inventory/{facilityId}")
-    suspend fun getInventory(@Path("facilityId") facilityId: String): ApiResponse<List<InventoryBalanceEntity>>
+    // ── Facilities ────────────────────────────
+    @GET("facilities")
+    suspend fun getFacilities(
+        @Query("district") district: String? = null
+    ): Response<ApiResponse<List<FacilityResponse>>>
 
-    @POST("api/inventory/transaction")
-    suspend fun recordTransaction(@Body request: InventoryTransactionRequest): ApiResponse<Boolean>
+    @GET("facilities/{facilityId}")
+    suspend fun getFacility(
+        @Path("facilityId") facilityId: String
+    ): Response<ApiResponse<FacilityResponse>>
 
-    @GET("api/risks")
-    suspend fun getRisks(): ApiResponse<List<RiskEntity>>
+    // ── Inventory ─────────────────────────────
+    @GET("inventory")
+    suspend fun getInventory(
+        @Query("facilityId") facilityId: String? = null,
+        @Query("district") district: String? = null
+    ): Response<ApiResponse<List<InventoryResponse>>>
 
-    @GET("api/facilities/alerts")
-    suspend fun getAlerts(): ApiResponse<List<AlertEntity>>
+    @POST("inventory/transaction")
+    suspend fun recordTransaction(
+        @Body request: InventoryTransactionRequest
+    ): Response<ApiResponse<Boolean>>
 
-    @GET("api/redistribution/recommendations")
-    suspend fun getRecommendations(): ApiResponse<List<RedistributionEntity>>
+    // ── Risks ─────────────────────────────────
+    @GET("risks")
+    suspend fun getRisks(
+        @Query("severity") severity: String? = null,
+        @Query("facilityId") facilityId: String? = null,
+        @Query("district") district: String? = null
+    ): Response<ApiResponse<List<RiskResponse>>>
 
-    @POST("api/redistribution/{id}/approve")
-    suspend fun approveRecommendation(@Path("id") id: String): ApiResponse<Boolean>
+    // ── Alerts ────────────────────────────────
+    @GET("alerts")
+    suspend fun getAlerts(
+        @Query("activeOnly") activeOnly: Boolean = false
+    ): Response<ApiResponse<List<AlertResponse>>>
 
-    @POST("api/redistribution/{id}/reject")
-    suspend fun rejectRecommendation(@Path("id") id: String): ApiResponse<Boolean>
+    @PATCH("alerts/{alertId}/resolve")
+    suspend fun resolveAlert(
+        @Path("alertId") alertId: String
+    ): Response<ApiResponse<AlertResponse>>
 
-    @POST("api/ai/chat")
-    suspend fun askGemini(@Body request: AiChatRequest): ApiResponse<AiChatResponse>
+    // ── Redistribution ────────────────────────
+    @GET("redistribution")
+    suspend fun getRedistributions(
+        @Query("pendingOnly") pendingOnly: Boolean = false
+    ): Response<ApiResponse<List<RedistributionResponse>>>
 
-    @GET("api/supplies")
-    suspend fun getSupplies(): List<NetworkSupplyItem>
+    @POST("redistribution/approve")
+    suspend fun approveRedistribution(
+        @Body request: RedistributionApprovalRequest
+    ): Response<ApiResponse<RedistributionResponse>>
 
-    @POST("api/supplies/{id}/transaction")
-    suspend fun recordSupplyTransaction(
-        @Path("id") id: String,
-        @Body request: SupplyTransactionRequest
-    ): SupplyTransactionResponse
+    // ── Forecast ──────────────────────────────
+    @GET("forecast")
+    suspend fun getForecast(
+        @Query("facilityId") facilityId: String? = null
+    ): Response<ApiResponse<List<ForecastResponse>>>
+
+    // ── Beds & Staff ──────────────────────────
+    @GET("beds-staff")
+    suspend fun getBedsAndStaff(
+        @Query("district") district: String? = null
+    ): Response<ApiResponse<BedsStaffResponse>>
+
+    // ── Audit Logs ────────────────────────────
+    @GET("audit-logs")
+    suspend fun getAuditLogs(
+        @Query("performedBy") performedBy: String? = null,
+        @Query("entityType") entityType: String? = null
+    ): Response<ApiResponse<List<AuditLogResponse>>>
+
+    // ── AI Assistant ──────────────────────────
+    @POST("ai-assistant/chat")
+    suspend fun chatWithAi(
+        @Body request: AiChatRequest
+    ): Response<ApiResponse<AiChatResponse>>
 }

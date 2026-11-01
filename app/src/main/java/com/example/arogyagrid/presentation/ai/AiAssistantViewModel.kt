@@ -2,7 +2,7 @@ package com.example.arogyagrid.presentation.ai
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.arogyagrid.domain.usecase.AskGeminiAssistantUseCase
+import com.example.arogyagrid.data.repository.AiAssistantRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,9 +10,9 @@ import kotlinx.coroutines.launch
 
 data class ChatMessage(val sender: String, val text: String, val isGrounded: Boolean = false)
 
-class AiAssistantViewModel(
-    private val askGeminiAssistantUseCase: AskGeminiAssistantUseCase
-) : ViewModel() {
+class AiAssistantViewModel : ViewModel() {
+
+    private val repo = AiAssistantRepositoryImpl()
 
     private val _chatHistory = MutableStateFlow<List<ChatMessage>>(
         listOf(
@@ -30,10 +30,13 @@ class AiAssistantViewModel(
         _isLoading.value = true
 
         viewModelScope.launch {
-            val response = askGeminiAssistantUseCase(prompt, district)
-            val aiText = if (response.success && response.data != null) response.data else "Unable to retrieve response."
-            _chatHistory.value = _chatHistory.value + ChatMessage("AI", aiText, isGrounded = true)
-            _isLoading.value = false
+            repo.chat(prompt).onSuccess { ai ->
+                _chatHistory.value = _chatHistory.value + ChatMessage("AI", ai.reply, isGrounded = ai.grounded)
+                _isLoading.value = false
+            }.onFailure { e ->
+                _chatHistory.value = _chatHistory.value + ChatMessage("AI", e.message ?: "Error retrieving response.", isGrounded = false)
+                _isLoading.value = false
+            }
         }
     }
 }

@@ -2,50 +2,52 @@ package com.example.arogyagrid.presentation.inventory
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.arogyagrid.domain.models.InventoryItem
-import com.example.arogyagrid.domain.repository.InventoryRepository
-import com.example.arogyagrid.domain.usecase.RecordInventoryTransactionUseCase
+import com.example.arogyagrid.core.UserSession
+import com.example.arogyagrid.data.repository.InventoryRepositoryImpl
+import com.example.arogyagrid.domain.model.InventoryItem
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class InventoryViewModel(
-    private val inventoryRepository: InventoryRepository,
-    private val recordInventoryTransactionUseCase: RecordInventoryTransactionUseCase,
-    private val facilityId: String = "F-3" // Default Jaipur PHC 1
-) : ViewModel() {
+class InventoryViewModel : ViewModel() {
 
-    val inventoryList: StateFlow<List<InventoryItem>> = inventoryRepository
-        .getInventoryForFacility(facilityId)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    private val repo = InventoryRepositoryImpl()
 
-    init {
-        viewModelScope.launch {
-            inventoryRepository.refreshInventory(facilityId)
-        }
-    }
+    private val _inventoryList = MutableStateFlow<List<InventoryItem>>(emptyList())
+    val inventoryList: StateFlow<List<InventoryItem>> = _inventoryList.asStateFlow()
 
     private val _userMessage = MutableStateFlow<String?>(null)
     val userMessage: StateFlow<String?> = _userMessage.asStateFlow()
 
+    init {
+        loadInventory()
+    }
+
+    fun loadInventory() {
+        viewModelScope.launch {
+            val facilityId = UserSession.userFacilityId
+            val district = UserSession.userDistrict
+            repo.getInventory(
+                facilityId = if (UserSession.userRole == "PHARMACIST_OPERATOR") facilityId else null,
+                district = if (UserSession.userRole == "DISTRICT_OFFICER") district else null
+            ).onSuccess { items ->
+                _inventoryList.value = items
+            }.onFailure { e ->
+                _userMessage.value = e.message
+            }
+        }
+    }
+
     fun recordTransaction(medicineId: String, quantity: Int, type: String, batch: String?, expiry: String?) {
         viewModelScope.launch {
-            val result = recordInventoryTransactionUseCase(
-                facilityId = facilityId,
-                medicineId = medicineId,
-                quantity = quantity,
-                type = type,
-                batchNumber = batch,
-                expiryDate = expiry
-            )
-            _userMessage.value = result.message ?: if (result.success) "Transaction completed" else "Transaction failed"
+            val facilityId = UserSession.userFacilityId ?: "F-1"
+            repo.recordTransaction(facilityId, medicineId, type, quantity, batch).onSuccess {
+                _userMessage.value = "Transaction recorded successfully"
+                loadInventory()
+            }.onFailure { e ->
+                _userMessage.value = e.message ?: "Transaction failed"
+            }
         }
     }
 

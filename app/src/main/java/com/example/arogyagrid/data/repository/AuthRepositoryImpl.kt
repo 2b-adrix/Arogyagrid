@@ -1,47 +1,81 @@
 package com.example.arogyagrid.data.repository
 
-import com.example.arogyagrid.core.ApiResponse
-import com.example.arogyagrid.core.UserRole
 import com.example.arogyagrid.core.UserSession
-import com.example.arogyagrid.domain.repository.AuthRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.example.arogyagrid.data.remote.NetworkClient
+import com.example.arogyagrid.data.remote.dto.LoginRequest
+import com.example.arogyagrid.data.remote.dto.RegisterRequest
+import com.example.arogyagrid.domain.model.AuthResult
 
-class AuthRepositoryImpl : AuthRepository {
-    private val _currentSession = MutableStateFlow<UserSession?>(
-        UserSession(
-            userId = "USR-001",
-            username = "district_officer_jaipur",
-            fullName = "Jaipur District Officer",
-            role = UserRole.DISTRICT_OFFICER,
-            district = "Jaipur",
-            facilityId = null,
-            token = "demo_jwt_token_jaipur"
-        )
-    )
-    override val currentSession: StateFlow<UserSession?> = _currentSession.asStateFlow()
+class AuthRepositoryImpl {
 
-    override suspend fun login(
-        username: String,
-        role: UserRole,
-        district: String?,
-        facilityId: String?
-    ): ApiResponse<UserSession> {
-        val session = UserSession(
-            userId = "USR-${(100..999).random()}",
-            username = username,
-            fullName = username.replace("_", " ").replaceFirstChar { it.uppercase() },
-            role = role,
-            district = district,
-            facilityId = facilityId,
-            token = "jwt_${System.currentTimeMillis()}"
-        )
-        _currentSession.value = session
-        return ApiResponse(success = true, data = session, message = "Logged in successfully")
+    private val api = NetworkClient.apiService
+
+    suspend fun login(email: String, password: String): Result<AuthResult> {
+        return try {
+            val response = api.login(LoginRequest(email, password))
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()!!.data!!
+                UserSession.saveLogin(
+                    token = data.token,
+                    userId = data.id,
+                    name = data.name,
+                    email = data.email,
+                    role = data.role,
+                    district = data.district,
+                    facilityId = data.facilityId
+                )
+                Result.success(
+                    AuthResult(
+                        userId = data.id,
+                        name = data.name,
+                        email = data.email,
+                        role = data.role,
+                        token = data.token
+                    )
+                )
+            } else {
+                val msg = response.body()?.message ?: "Login failed"
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
-    override fun logout() {
-        _currentSession.value = null
+    suspend fun register(
+        name: String, email: String, password: String,
+        role: String, district: String?, facilityId: String?
+    ): Result<AuthResult> {
+        return try {
+            val response = api.register(
+                RegisterRequest(name, email, password, role, district, facilityId)
+            )
+            if (response.isSuccessful && response.body()?.success == true) {
+                val data = response.body()!!.data!!
+                UserSession.saveLogin(
+                    token = data.token,
+                    userId = data.id,
+                    name = data.name,
+                    email = data.email,
+                    role = data.role,
+                    district = data.district,
+                    facilityId = data.facilityId
+                )
+                Result.success(
+                    AuthResult(
+                        userId = data.id,
+                        name = data.name,
+                        email = data.email,
+                        role = data.role,
+                        token = data.token
+                    )
+                )
+            } else {
+                val msg = response.body()?.message ?: "Registration failed"
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

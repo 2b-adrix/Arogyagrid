@@ -44,6 +44,8 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.presentation.components.CommandTopBar
 import com.example.arogyagrid.presentation.components.SyntheticDataBanner
 import com.example.arogyagrid.presentation.theme.AccentBlue
@@ -53,13 +55,13 @@ import com.example.arogyagrid.presentation.theme.PrimaryTealLight
 import com.example.arogyagrid.presentation.theme.SlateBorder
 import com.example.arogyagrid.presentation.theme.TextDark
 import com.example.arogyagrid.presentation.theme.TextMuted
+import com.example.arogyagrid.presentation.viewmodel.AiAssistantViewModel
 
 @Composable
 fun AiAssistantScreen(
-    viewModel: AiAssistantViewModel
+    viewModel: AiAssistantViewModel = viewModel()
 ) {
-    val chatHistory by viewModel.chatHistory.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     var inputPrompt by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
@@ -78,8 +80,8 @@ fun AiAssistantScreen(
         SyntheticDataBanner()
 
         CommandTopBar(
-            roleLabel = "District Officer",
-            districtName = "Jaipur",
+            roleLabel = UserSession.userRole ?: "District Officer",
+            districtName = UserSession.userDistrict ?: "Jaipur",
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
             onSyncClick = {}
@@ -148,8 +150,7 @@ fun AiAssistantScreen(
                 items(suggestedQuestions) { question ->
                     SuggestionChip(
                         onClick = {
-                            inputPrompt = question
-                            viewModel.askQuestion(question)
+                            viewModel.sendMessage(question)
                             inputPrompt = ""
                         },
                         label = { Text(question, fontSize = 11.sp) }
@@ -166,10 +167,10 @@ fun AiAssistantScreen(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(chatHistory, key = { it.hashCode() }) { msg ->
-                    val isUser = msg.sender == "USER"
+                items(uiState.messages, key = { it.hashCode() }) { msg ->
+                    val isUser = msg.isUser
                     Row(
-                        modifier = Modifier.fillMaxWidth().animateItem(),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
                     ) {
                         Card(
@@ -182,7 +183,7 @@ fun AiAssistantScreen(
                             modifier = Modifier.fillMaxWidth(0.88f)
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
-                                if (!isUser && msg.isGrounded) {
+                                if (!isUser) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Box(
                                             modifier = Modifier
@@ -200,7 +201,7 @@ fun AiAssistantScreen(
                                         }
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = "GROUNDED GEMINI AI EXPLANATION",
+                                            text = "GROUNDED AI ASSISTANT",
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = AccentBlue
@@ -213,20 +214,33 @@ fun AiAssistantScreen(
                                     fontSize = 12.sp,
                                     color = if (isUser) Color.White else TextDark
                                 )
+
+                                if (msg.dataSources.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text("Data sources:", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        items(msg.dataSources) { src ->
+                                            SuggestionChip(
+                                                onClick = {},
+                                                label = { Text(src, fontSize = 9.sp) }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
 
-            if (isLoading) {
+            if (uiState.isLoading) {
                 Row(
                     modifier = Modifier.padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), color = PrimaryTeal, strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Gemini Copilot analyzing authorized operations data...", fontSize = 11.sp, color = TextMuted)
+                    Text("Analyzing authorized operations data...", fontSize = 11.sp, color = TextMuted)
                 }
             }
 
@@ -257,7 +271,7 @@ fun AiAssistantScreen(
                 IconButton(
                     onClick = {
                         if (inputPrompt.isNotBlank()) {
-                            viewModel.askQuestion(inputPrompt)
+                            viewModel.sendMessage(inputPrompt)
                             inputPrompt = ""
                         }
                     },

@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,11 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,28 +39,33 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.arogyagrid.core.UserSession
+import com.example.arogyagrid.domain.model.RedistributionItem
 import com.example.arogyagrid.presentation.components.CommandTopBar
+import com.example.arogyagrid.presentation.components.RiskBadge
 import com.example.arogyagrid.presentation.components.SyntheticDataBanner
 import com.example.arogyagrid.presentation.theme.PrimaryTeal
 import com.example.arogyagrid.presentation.theme.SlateBorder
 import com.example.arogyagrid.presentation.theme.StatusGreen
 import com.example.arogyagrid.presentation.theme.StatusGreenBg
+import com.example.arogyagrid.presentation.theme.StatusOrange
+import com.example.arogyagrid.presentation.theme.StatusOrangeBg
 import com.example.arogyagrid.presentation.theme.StatusRed
 import com.example.arogyagrid.presentation.theme.StatusRedBg
 import com.example.arogyagrid.presentation.theme.TextDark
 import com.example.arogyagrid.presentation.theme.TextMuted
+import com.example.arogyagrid.presentation.viewmodel.RedistributionViewModel
 
 @Composable
 fun RedistributionReviewScreen(
-    viewModel: RedistributionViewModel
+    viewModel: RedistributionViewModel = viewModel()
 ) {
-    val recs by viewModel.recommendations.collectAsState()
-    val message by viewModel.userMessage.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     Column(
@@ -70,11 +76,11 @@ fun RedistributionReviewScreen(
         SyntheticDataBanner()
 
         CommandTopBar(
-            roleLabel = "District Officer",
-            districtName = "Jaipur",
+            roleLabel = UserSession.userRole ?: "District Officer",
+            districtName = UserSession.userDistrict ?: "Jaipur",
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
-            onSyncClick = {}
+            onSyncClick = { viewModel.loadRedistributions() }
         )
 
         Column(modifier = Modifier.padding(16.dp)) {
@@ -91,7 +97,7 @@ fun RedistributionReviewScreen(
                         color = TextDark
                     )
                     Text(
-                        text = "Human-reviewed resource movement based on risk, surplus & proximity",
+                        text = "Human-reviewed resource movement based on risk, surplus & priority score",
                         fontSize = 12.sp,
                         color = TextMuted
                     )
@@ -100,15 +106,37 @@ fun RedistributionReviewScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            if (recs.isEmpty()) {
+            if (uiState.isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = PrimaryTeal)
+                }
+            } else if (uiState.error != null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(text = uiState.error ?: "Error loading redistributions", color = StatusRed, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(onClick = { viewModel.loadRedistributions() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+            } else if (uiState.items.isEmpty()) {
                 Text("No active redistribution recommendations.", fontSize = 14.sp, color = TextMuted)
             } else {
+                val filteredList = uiState.items.filter {
+                    searchQuery.isBlank() ||
+                            it.medicineName.contains(searchQuery, ignoreCase = true) ||
+                            it.sourceFacilityName.contains(searchQuery, ignoreCase = true) ||
+                            it.targetFacilityName.contains(searchQuery, ignoreCase = true)
+                }
+
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(recs, key = { it.id }) { item ->
-                        val isApproved = item.status == "APPROVED"
+                    items(filteredList, key = { it.recommendationId }) { item ->
+                        val isApproved = item.status.equals("APPROVED", ignoreCase = true)
+                        val isPending = item.status.equals("PENDING_APPROVAL", ignoreCase = true) || item.status.equals("PENDING", ignoreCase = true)
 
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -118,7 +146,6 @@ fun RedistributionReviewScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .animateContentSize()
-                                .animateItem()
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 // Source -> Destination Route Header
@@ -133,7 +160,7 @@ fun RedistributionReviewScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("SOURCE (SURPLUS)", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
                                         Text(item.sourceFacilityName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                                        Text("Surplus: 400 units", fontSize = 10.sp, color = TextMuted)
+                                        Text("Surplus: ${item.sourceSurplus} units", fontSize = 10.sp, color = TextMuted)
                                     }
 
                                     Icon(
@@ -144,9 +171,9 @@ fun RedistributionReviewScreen(
                                     )
 
                                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                                        Text("DESTINATION (SHORTAGE)", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
-                                        Text(item.destinationFacilityName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                                        Text("Shortage: 330 units", fontSize = 10.sp, color = TextMuted)
+                                        Text("DESTINATION (DEFICIT)", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
+                                        Text(item.targetFacilityName, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                        Text("Deficit: ${item.targetDeficit} units", fontSize = 10.sp, color = TextMuted)
                                     }
                                 }
 
@@ -159,25 +186,28 @@ fun RedistributionReviewScreen(
                                 ) {
                                     Column {
                                         Text(item.medicineName, fontSize = 17.sp, fontWeight = FontWeight.Bold, color = PrimaryTeal)
-                                        Text("${item.recommendedQuantity} units recommended", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
+                                        Text("${item.transferQuantity} units recommended", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
                                     }
 
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("ESTIMATED DISTANCE", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
-                                        Text("~${item.distanceKm} km", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        Text("PRIORITY SCORE", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
+                                        Text("${item.priorityScore}", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        RiskBadge(riskLevel = if (isPending) "PENDING" else if (isApproved) "APPROVED" else "REJECTED")
                                     }
                                 }
 
-                                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = SlateBorder)
-
-                                Text("RATIONALE & REASON", fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(item.reason, fontSize = 12.sp, color = Color.DarkGray)
+                                if (!item.justification.isNullOrEmpty()) {
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = SlateBorder)
+                                    Text("JUSTIFICATION", fontSize = 10.sp, color = TextMuted, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(item.justification ?: "", fontSize = 12.sp, color = TextDark)
+                                }
 
                                 Spacer(modifier = Modifier.height(14.dp))
 
                                 AnimatedVisibility(
-                                    visible = item.status == "PENDING_APPROVAL",
+                                    visible = isPending,
                                     enter = fadeIn(),
                                     exit = fadeOut()
                                 ) {
@@ -186,14 +216,14 @@ fun RedistributionReviewScreen(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                                     ) {
                                         Button(
-                                            onClick = { viewModel.approve(item.id) },
+                                            onClick = { viewModel.approve(item.recommendationId, true) },
                                             shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier.weight(1f)
                                         ) {
                                             Text("Approve Transfer", fontSize = 13.sp)
                                         }
                                         OutlinedButton(
-                                            onClick = { viewModel.reject(item.id) },
+                                            onClick = { viewModel.approve(item.recommendationId, false) },
                                             shape = RoundedCornerShape(10.dp),
                                             colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusRed),
                                             modifier = Modifier.weight(1f)
@@ -204,7 +234,7 @@ fun RedistributionReviewScreen(
                                 }
 
                                 AnimatedVisibility(
-                                    visible = item.status != "PENDING_APPROVAL",
+                                    visible = !isPending,
                                     enter = fadeIn(),
                                     exit = fadeOut()
                                 ) {
@@ -223,8 +253,8 @@ fun RedistributionReviewScreen(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = if (isApproved) "APPROVED • Human officer decision recorded & inventory transfer queued"
-                                                   else "REJECTED • Human decision logged in audit history",
+                                            text = if (isApproved) "APPROVED • Decision recorded & inventory transfer queued"
+                                            else "REJECTED • Decision logged in audit history",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = if (isApproved) StatusGreen else StatusRed
@@ -237,18 +267,5 @@ fun RedistributionReviewScreen(
                 }
             }
         }
-    }
-
-    message?.let { msg ->
-        AlertDialog(
-            onDismissRequest = { viewModel.clearMessage() },
-            title = { Text("Decision Logged") },
-            text = { Text(msg) },
-            confirmButton = {
-                Button(onClick = { viewModel.clearMessage() }) {
-                    Text("OK")
-                }
-            }
-        )
     }
 }

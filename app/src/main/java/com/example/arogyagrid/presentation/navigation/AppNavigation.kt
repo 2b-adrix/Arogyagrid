@@ -21,45 +21,37 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.arogyagrid.data.SeedData
-import com.example.arogyagrid.data.local.AppDatabase
-import com.example.arogyagrid.data.remote.NetworkClient
-import com.example.arogyagrid.data.repository.AiRepositoryImpl
-import com.example.arogyagrid.data.repository.FacilityRepositoryImpl
-import com.example.arogyagrid.data.repository.InventoryRepositoryImpl
-import com.example.arogyagrid.data.repository.RedistributionRepositoryImpl
-import com.example.arogyagrid.data.repository.RiskRepositoryImpl
-import com.example.arogyagrid.domain.usecase.ApproveRedistributionUseCase
-import com.example.arogyagrid.domain.usecase.AskGeminiAssistantUseCase
-import com.example.arogyagrid.domain.usecase.GetDashboardDataUseCase
-import com.example.arogyagrid.domain.usecase.RecordInventoryTransactionUseCase
+import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.presentation.ai.AiAssistantScreen
-import com.example.arogyagrid.presentation.ai.AiAssistantViewModel
 import com.example.arogyagrid.presentation.audit.AuditLogsScreen
 import com.example.arogyagrid.presentation.auth.LoginScreen
 import com.example.arogyagrid.presentation.dashboard.DashboardScreen
-import com.example.arogyagrid.presentation.dashboard.DashboardViewModel
 import com.example.arogyagrid.presentation.facility.RegisterFacilityScreen
 import com.example.arogyagrid.presentation.forecast.ForecastScreen
 import com.example.arogyagrid.presentation.inventory.InventoryScreen
-import com.example.arogyagrid.presentation.inventory.InventoryViewModel
 import com.example.arogyagrid.presentation.profile.ProfileScreen
 import com.example.arogyagrid.presentation.redistribution.RedistributionReviewScreen
-import com.example.arogyagrid.presentation.redistribution.RedistributionViewModel
 import com.example.arogyagrid.presentation.resources.BedsStaffScreen
 import com.example.arogyagrid.presentation.risk.MedicineRiskScreen
 import com.example.arogyagrid.presentation.splash.SplashScreen
+import com.example.arogyagrid.presentation.viewmodel.AiAssistantViewModel
+import com.example.arogyagrid.presentation.viewmodel.AuditViewModel
+import com.example.arogyagrid.presentation.viewmodel.AuthViewModel
+import com.example.arogyagrid.presentation.viewmodel.BedsStaffViewModel
+import com.example.arogyagrid.presentation.viewmodel.DashboardViewModel
+import com.example.arogyagrid.presentation.viewmodel.ForecastViewModel
+import com.example.arogyagrid.presentation.viewmodel.InventoryViewModel
+import com.example.arogyagrid.presentation.viewmodel.RedistributionViewModel
+import com.example.arogyagrid.presentation.viewmodel.RiskViewModel
 
 sealed class NavItem(val route: String, val title: String, val icon: ImageVector) {
     object Dashboard : NavItem("dashboard", "Center", Icons.Default.Dashboard)
@@ -77,32 +69,17 @@ sealed class NavItem(val route: String, val title: String, val icon: ImageVector
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
-    val context = LocalContext.current
-
-    // Initialize DB & Repositories
-    val db = remember { AppDatabase.getDatabase(context) }
-    LaunchedEffect(Unit) {
-        SeedData.seedDatabaseIfEmpty(db)
-    }
-
-    val apiService = NetworkClient.apiService
-    val facilityRepo = remember { FacilityRepositoryImpl(db, apiService) }
-    val inventoryRepo = remember { InventoryRepositoryImpl(db, apiService) }
-    val riskRepo = remember { RiskRepositoryImpl(db, apiService) }
-    val redistributionRepo = remember { RedistributionRepositoryImpl(db, apiService) }
-    val aiRepo = remember { AiRepositoryImpl(db, apiService) }
-
-    // Use Cases
-    val getDashboardDataUseCase = remember { GetDashboardDataUseCase(facilityRepo, riskRepo, redistributionRepo) }
-    val recordInventoryTransactionUseCase = remember { RecordInventoryTransactionUseCase(inventoryRepo) }
-    val approveRedistributionUseCase = remember { ApproveRedistributionUseCase(redistributionRepo) }
-    val askGeminiAssistantUseCase = remember { AskGeminiAssistantUseCase(aiRepo) }
 
     // ViewModels
-    val dashboardViewModel = remember { DashboardViewModel(getDashboardDataUseCase) }
-    val inventoryViewModel = remember { InventoryViewModel(inventoryRepo, recordInventoryTransactionUseCase) }
-    val redistributionViewModel = remember { RedistributionViewModel(redistributionRepo, approveRedistributionUseCase) }
-    val aiAssistantViewModel = remember { AiAssistantViewModel(askGeminiAssistantUseCase) }
+    val authViewModel = remember { AuthViewModel() }
+    val dashboardViewModel = remember { DashboardViewModel() }
+    val riskViewModel = remember { RiskViewModel() }
+    val inventoryViewModel = remember { InventoryViewModel() }
+    val redistributionViewModel = remember { RedistributionViewModel() }
+    val forecastViewModel = remember { ForecastViewModel() }
+    val bedsStaffViewModel = remember { BedsStaffViewModel() }
+    val aiAssistantViewModel = remember { AiAssistantViewModel() }
+    val auditViewModel = remember { AuditViewModel() }
 
     val navItems = listOf(
         NavItem.Dashboard,
@@ -114,6 +91,8 @@ fun AppNavigation() {
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    val startDestination = if (UserSession.isLoggedIn) "dashboard" else "login"
 
     Scaffold(
         bottomBar = {
@@ -141,7 +120,7 @@ fun AppNavigation() {
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = "splash",
+            startDestination = startDestination,
             modifier = Modifier.padding(paddingValues),
             enterTransition = { fadeIn(animationSpec = tween(400)) },
             exitTransition = { fadeOut(animationSpec = tween(400)) },
@@ -151,7 +130,8 @@ fun AppNavigation() {
             composable("splash") {
                 SplashScreen(
                     onSplashFinished = {
-                        navController.navigate("login") {
+                        val nextScreen = if (UserSession.isLoggedIn) "dashboard" else "login"
+                        navController.navigate(nextScreen) {
                             popUpTo("splash") { inclusive = true }
                         }
                     }
@@ -159,9 +139,10 @@ fun AppNavigation() {
             }
             composable("login") {
                 LoginScreen(
-                    onLoginSuccess = { _, _ ->
+                    authViewModel = authViewModel,
+                    onLoginSuccess = {
                         navController.navigate("dashboard") {
-                            popUpTo("login") { inclusive = true }
+                            popUpTo(0) { inclusive = true }
                         }
                     }
                 )
@@ -178,7 +159,7 @@ fun AppNavigation() {
                 )
             }
             composable("medicine_risk") {
-                MedicineRiskScreen(viewModel = dashboardViewModel)
+                MedicineRiskScreen(viewModel = riskViewModel)
             }
             composable("inventory") {
                 InventoryScreen(viewModel = inventoryViewModel)
@@ -187,21 +168,23 @@ fun AppNavigation() {
                 RedistributionReviewScreen(viewModel = redistributionViewModel)
             }
             composable("forecast") {
-                ForecastScreen()
+                ForecastScreen(viewModel = forecastViewModel)
             }
             composable("beds_staff") {
-                BedsStaffScreen(viewModel = dashboardViewModel)
+                BedsStaffScreen(viewModel = bedsStaffViewModel)
             }
             composable("ai_assistant") {
                 AiAssistantScreen(viewModel = aiAssistantViewModel)
             }
             composable("profile") {
                 ProfileScreen(
-                    facilityRepository = facilityRepo,
+                    facilityRepository = null,
                     onNavigateToRegisterFacility = {
                         navController.navigate("register_facility")
                     },
                     onLogout = {
+                        UserSession.logout()
+                        authViewModel.logout()
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
                         }
@@ -210,14 +193,14 @@ fun AppNavigation() {
             }
             composable("register_facility") {
                 RegisterFacilityScreen(
-                    facilityRepository = facilityRepo,
+                    facilityRepository = null,
                     onNavigateBack = {
                         navController.popBackStack()
                     }
                 )
             }
             composable("audit_logs") {
-                AuditLogsScreen()
+                AuditLogsScreen(viewModel = auditViewModel)
             }
         }
     }

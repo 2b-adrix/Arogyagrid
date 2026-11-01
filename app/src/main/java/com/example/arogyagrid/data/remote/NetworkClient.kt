@@ -7,25 +7,27 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkClient {
-    // Port 5000 is forwarded via ADB so the physical device can reach localhost
-    var baseUrl = "http://127.0.0.1:5000/"
 
-    val mockInterceptor = MockApiInterceptor(isMockEnabled = true)
+    // ── CHANGE THIS if testing on real device ──
+    // Emulator: "http://10.0.2.2:8080/api/"
+    // Real device: "http://YOUR_PC_IP:8080/api/"
+    private const val BASE_URL = "http://10.0.2.2:8080/api/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
     private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(mockInterceptor)
+        .addInterceptor(AuthInterceptor())
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
     val apiService: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

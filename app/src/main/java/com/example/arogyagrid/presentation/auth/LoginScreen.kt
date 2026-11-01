@@ -2,23 +2,28 @@ package com.example.arogyagrid.presentation.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,38 +31,45 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.arogyagrid.core.UserRole
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.arogyagrid.presentation.theme.PrimaryTeal
+import com.example.arogyagrid.presentation.theme.StatusRed
 import com.example.arogyagrid.presentation.theme.TextDark
 import com.example.arogyagrid.presentation.theme.TextMuted
-
+import com.example.arogyagrid.presentation.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: (UserRole, String?) -> Unit
+    authViewModel: AuthViewModel = viewModel(),
+    onLoginSuccess: () -> Unit
 ) {
-    var username by remember { mutableStateOf("officer_jaipur") }
-    var selectedRole by remember { mutableStateOf(UserRole.DISTRICT_OFFICER) }
-    var district by remember { mutableStateOf("Jaipur") }
+    val uiState by authViewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val roles = listOf(
-        UserRole.STATE_ADMIN to "State Admin",
-        UserRole.DISTRICT_OFFICER to "District Officer",
-        UserRole.FACILITY_MANAGER to "Facility Manager",
-        UserRole.PHARMACIST_OPERATOR to "Pharmacist"
-    )
+    var email by remember { mutableStateOf("admin@arogyagrid.com") }
+    var password by remember { mutableStateOf("admin123") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
+            onLoginSuccess()
+        }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { err ->
+            snackbarHostState.showSnackbar(err)
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -92,60 +104,61 @@ fun LoginScreen(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("Username") },
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email Address") },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("Select Officer Role", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextMuted)
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(roles) { (role, label) ->
-                            FilterChip(
-                                selected = selectedRole == role,
-                                onClick = { selectedRole = role },
-                                label = { Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
-                            )
-                        }
-                    }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     OutlinedTextField(
-                        value = district,
-                        onValueChange = { district = it },
-                        label = { Text("District Scope") },
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
                         singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    if (uiState.error != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = uiState.error ?: "",
+                            color = StatusRed,
+                            fontSize = 12.sp
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Button(
-                        onClick = { onLoginSuccess(selectedRole, district) },
+                        onClick = { authViewModel.login(email, password) },
+                        enabled = !uiState.isLoading,
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp)
                     ) {
-                        Text("Sign In to Command Center", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        if (uiState.isLoading) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Text("Sign In to Command Center", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
         }
-    }
-}
-@Preview (showSystemUi = true)
-@Composable
-fun LoginScreen ()
-{
-    MaterialTheme {
-        LoginScreen(onLoginSuccess = { _, _ -> })
-    }
-}
 
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
+    }
+}

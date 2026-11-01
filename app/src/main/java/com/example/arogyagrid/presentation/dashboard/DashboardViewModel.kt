@@ -2,28 +2,32 @@ package com.example.arogyagrid.presentation.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.arogyagrid.domain.usecase.DashboardSummary
-import com.example.arogyagrid.domain.usecase.GetDashboardDataUseCase
-import kotlinx.coroutines.flow.SharingStarted
+import com.example.arogyagrid.core.UserSession
+import com.example.arogyagrid.data.repository.DashboardRepositoryImpl
+import com.example.arogyagrid.domain.model.DashboardSummary
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class DashboardViewModel(
-    getDashboardDataUseCase: GetDashboardDataUseCase,
-    districtFilter: String? = "Jaipur"
-) : ViewModel() {
+class DashboardViewModel : ViewModel() {
 
-    val summaryState: StateFlow<DashboardSummary?> = getDashboardDataUseCase(districtFilter)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    private val repo = DashboardRepositoryImpl()
+
+    private val _summaryState = MutableStateFlow<DashboardSummary?>(null)
+    val summaryState: StateFlow<DashboardSummary?> = _summaryState.asStateFlow()
 
     init {
+        loadDashboard()
+    }
+
+    fun loadDashboard() {
         viewModelScope.launch {
-            getDashboardDataUseCase.refreshDashboardData()
+            val district = UserSession.userDistrict
+            val filter = if (district == "ALL") null else district
+            repo.getDashboard(filter).onSuccess { data ->
+                _summaryState.value = data
+            }
         }
     }
 }
