@@ -6,10 +6,14 @@ import android.content.SharedPreferences
 object UserSession {
 
     private lateinit var prefs: SharedPreferences
+    lateinit var appContext: Context
 
     fun init(context: Context) {
+        appContext = context.applicationContext
         prefs = context.getSharedPreferences("arogyagrid_session", Context.MODE_PRIVATE)
     }
+
+    fun getContextOrNull(): Context? = if (::appContext.isInitialized) appContext else null
 
     var token: String?
         get() = prefs.getString("token", null)

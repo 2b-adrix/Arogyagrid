@@ -37,6 +37,17 @@ class RiskViewModel : ViewModel() {
             )
             result.onSuccess { items ->
                 _uiState.value = RiskUiState(items = items)
+                val critical = items.firstOrNull { it.daysToStockout <= 2 }
+                if (critical != null) {
+                    com.example.arogyagrid.core.UserSession.getContextOrNull()?.let { ctx ->
+                        com.example.arogyagrid.util.NotificationHelper.showCriticalStockAlert(
+                            context = ctx,
+                            medicineName = critical.medicineName,
+                            facilityName = critical.facilityName,
+                            daysRemaining = critical.daysToStockout
+                        )
+                    }
+                }
             }.onFailure { e ->
                 _uiState.value = RiskUiState(error = e.message)
             }

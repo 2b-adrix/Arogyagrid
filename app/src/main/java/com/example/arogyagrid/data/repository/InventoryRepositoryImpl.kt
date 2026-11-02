@@ -49,19 +49,30 @@ class InventoryRepositoryImpl {
         batchNumber: String? = null,
         remarks: String? = null
     ): Result<Boolean> {
+        val request = InventoryTransactionRequest(
+            facilityId, medicineId, type, quantity, batchNumber, remarks
+        )
         return try {
-            val response = api.recordTransaction(
-                InventoryTransactionRequest(
-                    facilityId, medicineId, type, quantity, batchNumber, remarks
-                )
-            )
+            val response = api.recordTransaction(request)
             if (response.isSuccessful && response.body()?.success == true) {
                 Result.success(response.body()!!.data ?: true)
             } else {
-                Result.failure(Exception(response.body()?.message ?: "Failed"))
+                val ctx = com.example.arogyagrid.core.UserSession.getContextOrNull()
+                if (ctx != null) {
+                    com.example.arogyagrid.sync.SyncManager.queueOfflineTransaction(ctx, request)
+                    Result.success(true)
+                } else {
+                    Result.failure(Exception(response.body()?.message ?: "Failed"))
+                }
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            val ctx = com.example.arogyagrid.core.UserSession.getContextOrNull()
+            if (ctx != null) {
+                com.example.arogyagrid.sync.SyncManager.queueOfflineTransaction(ctx, request)
+                Result.success(true)
+            } else {
+                Result.failure(e)
+            }
         }
     }
 }

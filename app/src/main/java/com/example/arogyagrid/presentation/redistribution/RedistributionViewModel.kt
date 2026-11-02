@@ -35,8 +35,17 @@ class RedistributionViewModel : ViewModel() {
 
     fun approve(id: String) {
         viewModelScope.launch {
+            val item = _recommendations.value.find { it.recommendationId == id }
             repo.approveRedistribution(id, approved = true).onSuccess {
                 _userMessage.value = "Transfer approved successfully"
+                com.example.arogyagrid.core.UserSession.getContextOrNull()?.let { ctx ->
+                    com.example.arogyagrid.util.NotificationHelper.showTransferApprovedNotification(
+                        context = ctx,
+                        medicineName = item?.medicineName ?: "Emergency Medical Supplies",
+                        quantity = item?.transferQuantity ?: 500,
+                        destinationFacility = item?.targetFacilityName ?: "Destination Facility"
+                    )
+                }
                 loadRedistributions()
             }.onFailure { e ->
                 _userMessage.value = e.message ?: "Approval failed"

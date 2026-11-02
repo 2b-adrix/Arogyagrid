@@ -70,6 +70,9 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
+    // WorkManager (Hybrid Offline Sync Engine)
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+
     // Google Gemini AI SDK
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 

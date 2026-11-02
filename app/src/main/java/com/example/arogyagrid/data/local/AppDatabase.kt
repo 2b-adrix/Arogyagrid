@@ -8,12 +8,14 @@ import com.example.arogyagrid.data.local.dao.AlertDao
 import com.example.arogyagrid.data.local.dao.FacilityDao
 import com.example.arogyagrid.data.local.dao.InventoryDao
 import com.example.arogyagrid.data.local.dao.MedicineDao
+import com.example.arogyagrid.data.local.dao.PendingSyncDao
 import com.example.arogyagrid.data.local.dao.RedistributionDao
 import com.example.arogyagrid.data.local.dao.RiskDao
 import com.example.arogyagrid.data.local.entities.AlertEntity
 import com.example.arogyagrid.data.local.entities.FacilityEntity
 import com.example.arogyagrid.data.local.entities.InventoryBalanceEntity
 import com.example.arogyagrid.data.local.entities.MedicineEntity
+import com.example.arogyagrid.data.local.entities.PendingSyncEntity
 import com.example.arogyagrid.data.local.entities.RedistributionEntity
 import com.example.arogyagrid.data.local.entities.RiskEntity
 
@@ -24,9 +26,10 @@ import com.example.arogyagrid.data.local.entities.RiskEntity
         InventoryBalanceEntity::class,
         RiskEntity::class,
         AlertEntity::class,
-        RedistributionEntity::class
+        RedistributionEntity::class,
+        PendingSyncEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun riskDao(): RiskDao
     abstract fun alertDao(): AlertDao
     abstract fun redistributionDao(): RedistributionDao
+    abstract fun pendingSyncDao(): PendingSyncDao
 
     companion object {
         @Volatile

@@ -102,6 +102,10 @@ fun CommandTopBar(
                         )
                     }
                     Spacer(modifier = Modifier.width(10.dp))
+                    val isOnline by com.example.arogyagrid.util.NetworkMonitor.isOnline.collectAsState()
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val pendingCount by com.example.arogyagrid.sync.SyncManager.getPendingCountFlow(context).collectAsState(initial = 0)
+
                     Column {
                         Text(
                             text = "SmartHealth",
@@ -110,17 +114,22 @@ fun CommandTopBar(
                             color = TextDark
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Wifi,
-                                contentDescription = "Online",
-                                tint = PrimaryTeal,
-                                modifier = Modifier.size(10.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(if (isOnline) PrimaryTeal else Color(0xFFF57C00))
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = "Live Sync • Just now",
+                                text = if (isOnline) {
+                                    if (pendingCount > 0) "Syncing $pendingCount queued..." else "Live Sync • Just now"
+                                } else {
+                                    if (pendingCount > 0) "Offline • $pendingCount queued" else "Offline Mode • Cached"
+                                },
                                 fontSize = 11.sp,
-                                color = TextMuted
+                                color = if (isOnline) TextMuted else Color(0xFFE65100),
+                                fontWeight = if (isOnline) FontWeight.Normal else FontWeight.Medium
                             )
                         }
                     }
