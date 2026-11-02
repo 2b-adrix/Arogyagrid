@@ -8,10 +8,8 @@ import java.util.concurrent.TimeUnit
 
 object NetworkClient {
 
-    // ── CHANGE THIS if testing on real device ──
-    // Emulator: "http://10.0.2.2:8080/api/"
-    // Real device: "http://YOUR_PC_IP:8080/api/"
-    private const val BASE_URL = "http://10.0.2.2:8080/api/"
+    // ── Live Render Cloud Backend ──
+    private const val BASE_URL = "https://arogyagrid-backend-aus8.onrender.com/api/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -20,9 +18,9 @@ object NetworkClient {
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor())
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(75, TimeUnit.SECONDS)
+        .readTimeout(75, TimeUnit.SECONDS)
+        .writeTimeout(75, TimeUnit.SECONDS)
         .build()
 
     val apiService: ApiService by lazy {

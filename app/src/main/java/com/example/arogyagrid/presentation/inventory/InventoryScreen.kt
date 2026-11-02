@@ -14,16 +14,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -34,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +56,7 @@ import com.example.arogyagrid.presentation.components.RiskBadge
 import com.example.arogyagrid.presentation.components.SyntheticDataBanner
 import com.example.arogyagrid.presentation.theme.PrimaryTeal
 import com.example.arogyagrid.presentation.theme.SlateBorder
+import com.example.arogyagrid.presentation.theme.StatusGreen
 import com.example.arogyagrid.presentation.theme.StatusRed
 import com.example.arogyagrid.presentation.theme.TextDark
 import com.example.arogyagrid.presentation.theme.TextMuted
@@ -59,9 +68,29 @@ fun InventoryScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var selectedFilter by remember { mutableStateOf("All") }
     var showTransactionDialog by remember { mutableStateOf<InventoryItem?>(null) }
     var transactionType by remember { mutableStateOf("RECEIPT") }
     var quantityText by remember { mutableStateOf("50") }
+    var successToast by remember { mutableStateOf<String?>(null) }
+
+    val filterOptions = listOf("All", "Vital", "Critical Shortage", "Surplus")
+
+    val filteredItems = uiState.items.filter { item ->
+        val matchesSearch = searchQuery.isBlank() ||
+            item.medicineName.contains(searchQuery, ignoreCase = true) ||
+            item.facilityName.contains(searchQuery, ignoreCase = true) ||
+            (item.batchNumber?.contains(searchQuery, ignoreCase = true) == true)
+
+        val matchesFilter = when (selectedFilter) {
+            "Vital" -> item.criticality.equals("VITAL", ignoreCase = true)
+            "Critical Shortage" -> item.coverageDays <= 5
+            "Surplus" -> item.stockGap == 0
+            else -> true
+        }
+
+        matchesSearch && matchesFilter
+    }
 
     Column(
         modifier = Modifier
@@ -103,6 +132,45 @@ fun InventoryScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Filter Chips Row
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(filterOptions) { filter ->
+                    FilterChip(
+                        selected = selectedFilter == filter,
+                        onClick = { selectedFilter = filter },
+                        label = { Text(filter, fontSize = 11.sp, fontWeight = FontWeight.Bold) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = PrimaryTeal,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            if (successToast != null) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = StatusGreen.copy(alpha = 0.2f),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = StatusGreen)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(successToast ?: "", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StatusGreen)
+                    }
+                }
+            }
+
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = PrimaryTeal)
@@ -118,25 +186,19 @@ fun InventoryScreen(
                     }
                 }
             } else {
-                val filteredItems = uiState.items.filter {
-                    searchQuery.isBlank() ||
-                            it.medicineName.contains(searchQuery, ignoreCase = true) ||
-                            it.facilityName.contains(searchQuery, ignoreCase = true)
-                }
-
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.fillMaxSize()
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    items(filteredItems, key = { "${it.facilityId}_${it.medicineId}" }) { item ->
+                    items(filteredItems) { item ->
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
+                            Column(modifier = Modifier.padding(18.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -145,8 +207,8 @@ fun InventoryScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = item.medicineName,
+                                            fontSize = 16.sp,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp,
                                             color = TextDark
                                         )
                                         Text(
@@ -158,60 +220,59 @@ fun InventoryScreen(
                                     RiskBadge(riskLevel = item.criticality)
                                 }
 
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Column {
-                                        Text("CLOSING STOCK", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
-                                        Text("${item.closingStock}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                                    }
-                                    Column {
-                                        Text("DAILY CONSUMPTION", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
-                                        Text("${item.avgDailyConsumption}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                                    }
-                                    Column(horizontalAlignment = Alignment.End) {
-                                        Text("COVERAGE DAYS", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Bold)
-                                        Text("${item.coverageDays} days", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Min: ${item.minimumStock} | Max: ${item.maximumStock} | Gap: ${item.stockGap}", fontSize = 11.sp, color = TextMuted)
-                                }
-
                                 Spacer(modifier = Modifier.height(12.dp))
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column {
+                                        Text("CLOSING STOCK", fontSize = 10.sp, color = TextMuted)
+                                        Text("${item.closingStock}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                    }
+                                    Column {
+                                        Text("DAILY CONSUMPTION", fontSize = 10.sp, color = TextMuted)
+                                        Text("${item.avgDailyConsumption}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                    }
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        Text("COVERAGE DAYS", fontSize = 10.sp, color = TextMuted)
+                                        Text("${item.coverageDays} days", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = if (item.coverageDays <= 5) StatusRed else PrimaryTeal)
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Min: ${item.minimumStock} | Max: ${item.maximumStock} | Gap: ${item.stockGap}",
+                                    fontSize = 11.sp,
+                                    color = TextMuted
+                                )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Button(
                                         onClick = {
-                                            transactionType = "RECEIPT"
                                             showTransactionDialog = item
+                                            transactionType = "RECEIPT"
                                         },
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         modifier = Modifier.weight(1f)
                                     ) {
-                                        Text("Receive Stock", fontSize = 12.sp)
+                                        Text("Receive Stock", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     }
+
                                     OutlinedButton(
                                         onClick = {
-                                            transactionType = "ISSUE"
                                             showTransactionDialog = item
+                                            transactionType = "ISSUE"
                                         },
-                                        shape = RoundedCornerShape(8.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         modifier = Modifier.weight(1f)
                                     ) {
-                                        Text("Issue Stock", fontSize = 12.sp)
+                                        Text("Issue Stock", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
@@ -220,45 +281,50 @@ fun InventoryScreen(
                 }
             }
         }
-    }
 
-    showTransactionDialog?.let { item ->
-        AlertDialog(
-            onDismissRequest = { showTransactionDialog = null },
-            title = { Text("$transactionType: ${item.medicineName}") },
-            text = {
-                Column {
-                    Text("Facility: ${item.facilityName}", fontSize = 12.sp, color = TextMuted)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = quantityText,
-                        onValueChange = { quantityText = it },
-                        label = { Text("Quantity") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val qty = quantityText.toIntOrNull() ?: 1
-                        viewModel.recordTransaction(
-                            facilityId = item.facilityId,
-                            medicineId = item.medicineId,
-                            type = transactionType,
-                            quantity = qty
+        // Transaction Recording Dialog
+        if (showTransactionDialog != null) {
+            val item = showTransactionDialog!!
+            AlertDialog(
+                onDismissRequest = { showTransactionDialog = null },
+                title = { Text("Record Stock $transactionType") },
+                text = {
+                    Column {
+                        Text("Medicine: ${item.medicineName}", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        Text("Facility: ${item.facilityName}", fontSize = 12.sp, color = TextMuted)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = quantityText,
+                            onValueChange = { quantityText = it },
+                            label = { Text("Quantity Units") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                        showTransactionDialog = null
                     }
-                ) {
-                    Text("Submit Transaction")
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val qty = quantityText.toIntOrNull() ?: 50
+                            viewModel.recordTransaction(
+                                facilityId = item.facilityId,
+                                medicineId = item.medicineId,
+                                type = transactionType,
+                                quantity = qty
+                            )
+                            showTransactionDialog = null
+                            successToast = "Successfully recorded $transactionType of $qty units for ${item.medicineName}"
+                        }
+                    ) {
+                        Text("Confirm")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTransactionDialog = null }) {
+                        Text("Cancel")
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTransactionDialog = null }) {
-                    Text("Cancel")
-                }
-            }
-        )
+            )
+        }
     }
 }

@@ -1,25 +1,13 @@
 package com.example.arogyagrid.presentation.navigation
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ListAlt
-import androidx.compose.material.icons.filled.AddBusiness
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SwapHoriz
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,32 +26,20 @@ import com.example.arogyagrid.presentation.dashboard.DashboardScreen
 import com.example.arogyagrid.presentation.facility.RegisterFacilityScreen
 import com.example.arogyagrid.presentation.forecast.ForecastScreen
 import com.example.arogyagrid.presentation.inventory.InventoryScreen
+import com.example.arogyagrid.presentation.map.HospitalMapScreen
 import com.example.arogyagrid.presentation.profile.ProfileScreen
 import com.example.arogyagrid.presentation.redistribution.RedistributionReviewScreen
 import com.example.arogyagrid.presentation.resources.BedsStaffScreen
 import com.example.arogyagrid.presentation.risk.MedicineRiskScreen
 import com.example.arogyagrid.presentation.splash.SplashScreen
-import com.example.arogyagrid.presentation.viewmodel.AiAssistantViewModel
-import com.example.arogyagrid.presentation.viewmodel.AuditViewModel
-import com.example.arogyagrid.presentation.viewmodel.AuthViewModel
-import com.example.arogyagrid.presentation.viewmodel.BedsStaffViewModel
-import com.example.arogyagrid.presentation.viewmodel.DashboardViewModel
-import com.example.arogyagrid.presentation.viewmodel.ForecastViewModel
-import com.example.arogyagrid.presentation.viewmodel.InventoryViewModel
-import com.example.arogyagrid.presentation.viewmodel.RedistributionViewModel
-import com.example.arogyagrid.presentation.viewmodel.RiskViewModel
+import com.example.arogyagrid.presentation.viewmodel.*
 
-sealed class NavItem(val route: String, val title: String, val icon: ImageVector) {
+sealed class NavItem(val route: String, val label: String, val icon: ImageVector) {
     object Dashboard : NavItem("dashboard", "Center", Icons.Default.Dashboard)
-    object MedicineRisk : NavItem("medicine_risk", "Risk", Icons.Default.MedicalServices)
+    object MedicineRisk : NavItem("medicine_risk", "Risk", Icons.Default.Warning)
     object Inventory : NavItem("inventory", "Inventory", Icons.Default.Inventory)
     object Redistribution : NavItem("redistribution", "Approval", Icons.Default.SwapHoriz)
-    object Forecast : NavItem("forecast", "Forecast", Icons.Default.BarChart)
-    object BedsStaff : NavItem("beds_staff", "Capacity", Icons.Default.Hotel)
-    object AiAssistant : NavItem("ai_assistant", "Copilot", Icons.Default.AutoAwesome)
-    object Profile : NavItem("profile", "Profile", Icons.Default.Person)
-    object RegisterFacility : NavItem("register_facility", "Register PHC", Icons.Default.AddBusiness)
-    object AuditLogs : NavItem("audit_logs", "Audit", Icons.AutoMirrored.Filled.ListAlt)
+    object Forecast : NavItem("forecast", "Forecast", Icons.AutoMirrored.Filled.TrendingUp)
 }
 
 @Composable
@@ -77,9 +53,9 @@ fun AppNavigation() {
     val inventoryViewModel = remember { InventoryViewModel() }
     val redistributionViewModel = remember { RedistributionViewModel() }
     val forecastViewModel = remember { ForecastViewModel() }
-    val bedsStaffViewModel = remember { BedsStaffViewModel() }
     val aiAssistantViewModel = remember { AiAssistantViewModel() }
     val auditViewModel = remember { AuditViewModel() }
+    val bedsStaffViewModel = remember { BedsStaffViewModel() }
 
     val navItems = listOf(
         NavItem.Dashboard,
@@ -96,7 +72,7 @@ fun AppNavigation() {
 
     Scaffold(
         bottomBar = {
-            if (currentRoute != "login" && currentRoute != "splash" && currentRoute != "register_facility") {
+            if (currentRoute != "login" && currentRoute != "splash" && currentRoute != "register_facility" && currentRoute != "hospital_map") {
                 NavigationBar {
                     navItems.forEach { item ->
                         NavigationBarItem(
@@ -110,22 +86,18 @@ fun AppNavigation() {
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(item.icon, contentDescription = item.title) },
-                            label = { Text(item.title) }
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) }
                         )
                     }
                 }
             }
         }
-    ) { paddingValues ->
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(paddingValues),
-            enterTransition = { fadeIn(animationSpec = tween(400)) },
-            exitTransition = { fadeOut(animationSpec = tween(400)) },
-            popEnterTransition = { fadeIn(animationSpec = tween(400)) },
-            popExitTransition = { fadeOut(animationSpec = tween(400)) }
+            modifier = Modifier.padding(innerPadding)
         ) {
             composable("splash") {
                 SplashScreen(
@@ -170,17 +142,23 @@ fun AppNavigation() {
             composable("forecast") {
                 ForecastScreen(viewModel = forecastViewModel)
             }
-            composable("beds_staff") {
-                BedsStaffScreen(viewModel = bedsStaffViewModel)
-            }
             composable("ai_assistant") {
                 AiAssistantScreen(viewModel = aiAssistantViewModel)
+            }
+            composable("audit_logs") {
+                AuditLogsScreen(viewModel = auditViewModel)
+            }
+            composable("beds_staff") {
+                BedsStaffScreen(viewModel = bedsStaffViewModel)
             }
             composable("profile") {
                 ProfileScreen(
                     facilityRepository = null,
                     onNavigateToRegisterFacility = {
                         navController.navigate("register_facility")
+                    },
+                    onNavigateToMap = {
+                        navController.navigate("hospital_map")
                     },
                     onLogout = {
                         UserSession.logout()
@@ -199,8 +177,12 @@ fun AppNavigation() {
                     }
                 )
             }
-            composable("audit_logs") {
-                AuditLogsScreen(viewModel = auditViewModel)
+            composable("hospital_map") {
+                HospitalMapScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

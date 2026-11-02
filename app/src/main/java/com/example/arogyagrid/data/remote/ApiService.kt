@@ -41,6 +41,12 @@ interface ApiService {
         @Query("district") district: String? = null
     ): Response<ApiResponse<List<InventoryResponse>>>
 
+    @GET("inventory/nearest")
+    suspend fun getNearestSurplus(
+        @Query("facilityId") facilityId: String,
+        @Query("medicineId") medicineId: String
+    ): Response<ApiResponse<List<NearestFacilityDto>>>
+
     @POST("inventory/transaction")
     suspend fun recordTransaction(
         @Body request: InventoryTransactionRequest

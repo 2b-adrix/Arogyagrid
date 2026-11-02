@@ -24,3 +24,14 @@ data class InventoryTransactionRequest(
     val batchNumber: String? = null,
     val remarks: String? = null
 )
+
+data class NearestFacilityDto(
+    val facilityId: String,
+    val facilityName: String,
+    val latitude: Double,
+    val longitude: Double,
+    val distanceKm: Double,
+    val availableStock: Int,
+    val address: String,
+    val contactPhone: String
+)

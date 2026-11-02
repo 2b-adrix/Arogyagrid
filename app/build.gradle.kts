@@ -73,6 +73,9 @@ dependencies {
     // Google Gemini AI SDK
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
 
+    // OpenStreetMap (Osmdroid)
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)

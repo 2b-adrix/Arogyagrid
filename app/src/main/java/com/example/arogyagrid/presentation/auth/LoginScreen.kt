@@ -4,19 +4,23 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -50,8 +54,8 @@ fun LoginScreen(
     val uiState by authViewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var email by remember { mutableStateOf("admin@arogyagrid.com") }
-    var password by remember { mutableStateOf("admin123") }
+    var email by remember { mutableStateOf("district@arogyagrid.com") }
+    var password by remember { mutableStateOf("district123") }
 
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) {
@@ -75,18 +79,18 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "SmartHealth AI",
+                text = "ArogyaGrid",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = PrimaryTeal
             )
             Text(
-                text = "Healthcare Resource Intelligence Platform",
+                text = "Multi-Hospital Healthcare Command Center",
                 fontSize = 13.sp,
                 color = TextMuted
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -96,12 +100,12 @@ fun LoginScreen(
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
-                        text = "Command Center Access",
+                        text = "Hospital & Officer Sign In",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextDark
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     OutlinedTextField(
                         value = email,
@@ -133,7 +137,7 @@ fun LoginScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     Button(
                         onClick = { authViewModel.login(email, password) },
@@ -149,7 +153,58 @@ fun LoginScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                         } else {
-                            Text("Sign In to Command Center", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            Text("Sign In to Workspace", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Quick Test Login Presets:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextMuted
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                email = "district@arogyagrid.com"
+                                password = "district123"
+                                authViewModel.login(email, password)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("District Officer", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                email = "sms.manager@arogyagrid.com"
+                                password = "facility123"
+                                authViewModel.login(email, password)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("SMS Hospital", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                email = "amer.pharma@arogyagrid.com"
+                                password = "pharma123"
+                                authViewModel.login(email, password)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("PHC Amer", fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

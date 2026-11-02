@@ -63,8 +63,8 @@ import com.example.arogyagrid.presentation.theme.TextMuted
 
 @Composable
 fun CommandTopBar(
-    roleLabel: String = "District Officer",
-    districtName: String = "Jaipur",
+    roleLabel: String = com.example.arogyagrid.core.UserSession.getFormattedRole(),
+    districtName: String = com.example.arogyagrid.core.UserSession.userDistrict ?: "Jaipur",
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     onSyncClick: () -> Unit = {},

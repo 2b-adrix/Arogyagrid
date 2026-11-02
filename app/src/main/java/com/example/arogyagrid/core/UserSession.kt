@@ -63,4 +63,14 @@ object UserSession {
     fun logout() {
         prefs.edit().clear().apply()
     }
+
+    fun getFormattedRole(): String {
+        return when (userRole?.uppercase()) {
+            "DISTRICT_OFFICER" -> "District Officer"
+            "FACILITY_MANAGER" -> "Facility Manager"
+            "PHARMACIST_OPERATOR" -> "Pharmacist"
+            "STATE_ADMIN" -> "State Admin"
+            else -> userRole ?: "District Officer"
+        }
+    }
 }

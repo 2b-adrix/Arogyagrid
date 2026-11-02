@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -32,6 +33,8 @@ import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -42,6 +45,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -100,8 +104,8 @@ fun DashboardScreen(
         SyntheticDataBanner()
 
         CommandTopBar(
-            roleLabel = "District Officer",
-            districtName = "Jaipur",
+            roleLabel = com.example.arogyagrid.core.UserSession.getFormattedRole(),
+            districtName = com.example.arogyagrid.core.UserSession.userDistrict ?: "Jaipur",
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
             onSyncClick = { viewModel.loadDashboard() },
@@ -121,15 +125,27 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(24.dp)
+                ) {
                     Text(
                         text = uiState.error ?: "Error loading dashboard",
                         color = StatusRed,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Button(onClick = { viewModel.loadDashboard() }) {
-                        Text("Retry")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { viewModel.loadDashboard() }) {
+                            Text("Retry")
+                        }
+                        OutlinedButton(onClick = { onNavigateToScreen("inventory") }) {
+                            Text("Inventory")
+                        }
+                        OutlinedButton(onClick = { onNavigateToScreen("profile") }) {
+                            Text("Profile")
+                        }
                     }
                 }
             }
@@ -178,14 +194,14 @@ fun DashboardScreen(
                                     leadingIcon = { Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = PrimaryTeal) }
                                 )
                                 AssistChip(
-                                    onClick = { showBroadcastDialog = true },
-                                    label = { Text("Broadcast", fontSize = 10.sp) },
-                                    leadingIcon = { Icon(Icons.Default.Campaign, contentDescription = null, tint = StatusRed) }
+                                    onClick = { onNavigateToScreen("hospital_map") },
+                                    label = { Text("Live Map", fontSize = 10.sp) },
+                                    leadingIcon = { Icon(Icons.Default.Map, contentDescription = null, tint = PrimaryTeal) }
                                 )
                                 AssistChip(
-                                    onClick = { showReportDialog = true },
-                                    label = { Text("Report", fontSize = 10.sp) },
-                                    leadingIcon = { Icon(Icons.Default.Description, contentDescription = null, tint = AccentBlue) }
+                                    onClick = { onNavigateToScreen("beds_staff") },
+                                    label = { Text("Beds", fontSize = 10.sp) },
+                                    leadingIcon = { Icon(Icons.Default.LocalHospital, contentDescription = null, tint = AccentBlue) }
                                 )
                                 AssistChip(
                                     onClick = { onNavigateToScreen("audit_logs") },
@@ -206,11 +222,13 @@ fun DashboardScreen(
                                 MetricCard(
                                     label = "Total Facilities",
                                     value = "${sum.totalFacilities}",
-                                    sub = "Total Monitored",
+                                    sub = "Tap for Live Map →",
                                     icon = Icons.Default.Business,
                                     iconBgColor = PrimaryTealLight,
                                     iconTintColor = PrimaryTeal,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { onNavigateToScreen("hospital_map") }
                                 )
                                 MetricCard(
                                     label = "Bed Occupancy",
@@ -219,7 +237,9 @@ fun DashboardScreen(
                                     icon = Icons.Default.Favorite,
                                     iconBgColor = AccentBlueLight,
                                     iconTintColor = AccentBlue,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable { onNavigateToScreen("beds_staff") }
                                 )
                             }
 
