@@ -4,17 +4,22 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.LocalHospital
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -25,7 +30,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.arogyagrid.presentation.theme.*
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.TileSourcePolicy
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -47,28 +53,69 @@ fun HospitalMapScreen(
 ) {
     val context = LocalContext.current
 
+    // Set dedicated production User-Agent (avoids com.example.* blocklist on OpenStreetMap)
     remember {
-        Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
+        Configuration.getInstance().apply {
+            load(context, context.getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
+            userAgentValue = "ArogyaGridHealthcareApp/1.0 (Android; contact@arogyagrid.in)"
+        }
         true
     }
 
-    val hospitals = listOf(
-        MapHospital("FAC-JPR-001", "Sawai ManSingh (SMS) Hospital, Jaipur", "Tertiary Hub", 26.8924, 75.8173, 0.0, "Surplus Stock Hub", false),
-        MapHospital("FAC-JPR-002", "JK Lon Pediatric Hospital, Jaipur", "Pediatric Center", 26.8950, 75.8150, 0.4, "Sufficient Inventory", false),
-        MapHospital("FAC-JPR-003", "Zanana Maternity Hospital, Jaipur", "Maternity Center", 26.9260, 75.8120, 3.8, "Moderate Stock", false),
-        MapHospital("FAC-JPR-004", "Mahila Chikitsalaya, Jaipur", "Specialty Center", 26.9150, 75.8200, 2.6, "Normal Stock", false),
-        MapHospital("FAC-JPR-005", "RUHS College of Medical Sciences, Jaipur", "Super-Specialty Hub", 26.8020, 75.8100, 10.2, "Surplus Hub", false),
-        MapHospital("FAC-JPR-006", "CHC Sanganer, Jaipur", "Community Centre", 26.8267, 75.7885, 7.9, "Oxygen Low (Reorder)", true),
-        MapHospital("FAC-JPR-007", "CHC Chomu, Jaipur", "Community Centre", 27.1661, 75.7217, 32.1, "Normal Stock", false),
-        MapHospital("FAC-JPR-008", "CHC Amber, Jaipur", "Community Centre", 26.9880, 75.8550, 11.4, "Normal Stock", false),
-        MapHospital("FAC-JPR-009", "CHC Kotputli, Jaipur", "Community Centre", 27.7020, 76.2010, 98.5, "Sufficient Inventory", false),
-        MapHospital("FAC-JPR-010", "CHC Shahpura, Jaipur", "Community Centre", 27.3850, 75.9620, 56.2, "Moderate Stock", false),
-        MapHospital("FAC-JPR-011", "PHC Amer, Jaipur", "Primary Health Centre", 26.9855, 75.8513, 11.2, "Critical ORS Shortage", true),
-        MapHospital("FAC-JPR-012", "PHC Chaksu, Jaipur", "Primary Health Centre", 26.6058, 75.9471, 34.0, "Normal Stock", false),
-        MapHospital("FAC-JPR-013", "PHC Phagi, Jaipur", "Primary Health Centre", 26.5868, 75.5741, 41.5, "Low Stock Warning", true),
-        MapHospital("FAC-JPR-014", "PHC Bassi, Jaipur", "Primary Health Centre", 26.8340, 76.0420, 23.8, "Normal Stock", false),
-        MapHospital("FAC-JPR-015", "PHC Jamwa Ramgarh, Jaipur", "Primary Health Centre", 27.0250, 76.0120, 24.3, "Normal Stock", false)
-    )
+    // Custom OpenStreetMap Tile Source with custom policy (bypasses Default Mapnik com.example block)
+    val osmLiveTileSource = remember {
+        XYTileSource(
+            "OpenStreetMapLive",
+            0, 19, 256, ".png",
+            arrayOf("https://tile.openstreetmap.org/"),
+            "© OpenStreetMap contributors",
+            TileSourcePolicy(2, TileSourcePolicy.FLAG_NO_BULK or TileSourcePolicy.FLAG_NO_PREVENTIVE)
+        )
+    }
+
+    // High-performance OpenStreetMap CartoDB Voyager tiles (100% uptime vector raster)
+    val cartoVoyagerTileSource = remember {
+        XYTileSource(
+            "CartoVoyager",
+            0, 19, 256, ".png",
+            arrayOf(
+                "https://a.basemaps.cartocdn.com/rastertiles/voyager/",
+                "https://b.basemaps.cartocdn.com/rastertiles/voyager/",
+                "https://c.basemaps.cartocdn.com/rastertiles/voyager/"
+            ),
+            "© OpenStreetMap contributors, © CARTO"
+        )
+    }
+
+    var selectedTileSourceIndex by remember { mutableIntStateOf(0) } // 0 = CartoVoyager, 1 = OpenStreetMap Live
+    var selectedHospitalId by remember { mutableStateOf<String?>("FAC-JPR-001") }
+    var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
+
+    val hospitals = remember {
+        listOf(
+            MapHospital("FAC-JPR-001", "Sawai ManSingh (SMS) Hospital, Jaipur", "Tertiary Hub", 26.8924, 75.8173, 0.0, "Surplus Stock Hub", false),
+            MapHospital("FAC-JPR-002", "JK Lon Pediatric Hospital, Jaipur", "Pediatric Center", 26.8950, 75.8150, 0.4, "Sufficient Inventory", false),
+            MapHospital("FAC-JPR-003", "Zanana Maternity Hospital, Jaipur", "Maternity Center", 26.9260, 75.8120, 3.8, "Moderate Stock", false),
+            MapHospital("FAC-JPR-004", "Mahila Chikitsalaya, Jaipur", "Specialty Center", 26.9150, 75.8200, 2.6, "Normal Stock", false),
+            MapHospital("FAC-JPR-005", "RUHS College of Medical Sciences, Jaipur", "Super-Specialty Hub", 26.8020, 75.8100, 10.2, "Surplus Hub", false),
+            MapHospital("FAC-JPR-006", "CHC Sanganer, Jaipur", "Community Centre", 26.8267, 75.7885, 7.9, "Oxygen Low (Reorder)", true),
+            MapHospital("FAC-JPR-007", "CHC Chomu, Jaipur", "Community Centre", 27.1661, 75.7217, 32.1, "Normal Stock", false),
+            MapHospital("FAC-JPR-008", "CHC Amber, Jaipur", "Community Centre", 26.9880, 75.8550, 11.4, "Normal Stock", false),
+            MapHospital("FAC-JPR-009", "CHC Kotputli, Jaipur", "Community Centre", 27.7020, 76.2010, 98.5, "Sufficient Inventory", false),
+            MapHospital("FAC-JPR-010", "CHC Shahpura, Jaipur", "Community Centre", 27.3850, 75.9620, 56.2, "Moderate Stock", false),
+            MapHospital("FAC-JPR-011", "PHC Amer, Jaipur", "Primary Health Centre", 26.9855, 75.8513, 11.2, "Critical ORS Shortage", true),
+            MapHospital("FAC-JPR-012", "PHC Chaksu, Jaipur", "Primary Health Centre", 26.6058, 75.9471, 34.0, "Normal Stock", false),
+            MapHospital("FAC-JPR-013", "PHC Phagi, Jaipur", "Primary Health Centre", 26.5868, 75.5741, 41.5, "Low Stock Warning", true),
+            MapHospital("FAC-JPR-014", "PHC Bassi, Jaipur", "Primary Health Centre", 26.8340, 76.0420, 23.8, "Normal Stock", false),
+            MapHospital("FAC-JPR-015", "PHC Jamwa Ramgarh, Jaipur", "Primary Health Centre", 27.0250, 76.0120, 24.3, "Normal Stock", false)
+        )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            mapViewInstance?.onPause()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -90,21 +137,41 @@ fun HospitalMapScreen(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextDark)
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(text = "Jaipur Health Grid", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                    Text(text = "Interactive OpenStreetMap & Routing", fontSize = 11.sp, color = TextMuted)
+                    Text(
+                        text = if (selectedTileSourceIndex == 0) "OpenStreetMap (Voyager CDN)" else "OpenStreetMap (Standard Tiles)",
+                        fontSize = 11.sp,
+                        color = PrimaryTeal
+                    )
                 }
+                FilterChip(
+                    selected = selectedTileSourceIndex == 1,
+                    onClick = {
+                        selectedTileSourceIndex = if (selectedTileSourceIndex == 0) 1 else 0
+                        val targetSource = if (selectedTileSourceIndex == 0) cartoVoyagerTileSource else osmLiveTileSource
+                        mapViewInstance?.setTileSource(targetSource)
+                        mapViewInstance?.invalidate()
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Default.Layers, contentDescription = null, modifier = Modifier.size(14.dp))
+                    },
+                    label = { Text(if (selectedTileSourceIndex == 0) "Style: Voyager" else "Style: OSM Live", fontSize = 10.sp) }
+                )
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().height(340.dp)) {
             AndroidView(
                 factory = { ctx ->
                     MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
+                        val initialSource = if (selectedTileSourceIndex == 0) cartoVoyagerTileSource else osmLiveTileSource
+                        setTileSource(initialSource)
                         setMultiTouchControls(true)
-                        controller.setZoom(12.0)
-                        controller.setCenter(GeoPoint(26.9124, 75.7873))
+                        controller.setZoom(12.5)
+                        controller.setCenter(GeoPoint(26.8924, 75.8173))
+                        mapViewInstance = this
+                        onResume()
                     }
                 },
                 update = { mapView ->
@@ -114,12 +181,53 @@ fun HospitalMapScreen(
                         marker.position = GeoPoint(h.latitude, h.longitude)
                         marker.title = h.name
                         marker.snippet = "${h.type} • ${h.status}"
+                        marker.setOnMarkerClickListener { m, _ ->
+                            selectedHospitalId = h.id
+                            m.showInfoWindow()
+                            true
+                        }
                         mapView.overlays.add(marker)
                     }
                     mapView.invalidate()
                 },
                 modifier = Modifier.fillMaxSize()
             )
+
+            // Map Quick Controls: Zoom In, Zoom Out, Center SMS Hospital
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SmallFloatingActionButton(
+                    onClick = { mapViewInstance?.controller?.zoomIn() },
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = PrimaryTeal
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Zoom In", modifier = Modifier.size(18.dp))
+                }
+                SmallFloatingActionButton(
+                    onClick = { mapViewInstance?.controller?.zoomOut() },
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = PrimaryTeal
+                ) {
+                    Icon(Icons.Default.Remove, contentDescription = "Zoom Out", modifier = Modifier.size(18.dp))
+                }
+                SmallFloatingActionButton(
+                    onClick = {
+                        mapViewInstance?.controller?.animateTo(GeoPoint(26.8924, 75.8173))
+                        mapViewInstance?.controller?.setZoom(13.0)
+                    },
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = PrimaryTeal
+                ) {
+                    Icon(Icons.Default.MyLocation, contentDescription = "Center on SMS Hospital", modifier = Modifier.size(18.dp))
+                }
+            }
         }
 
         LazyColumn(
@@ -127,16 +235,30 @@ fun HospitalMapScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text(text = "Hospitals by Proximity", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "Hospitals by Proximity", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                    Text(text = "Tap hospital to focus on map", fontSize = 11.sp, color = TextMuted)
+                }
             }
 
             items(hospitals.sortedBy { it.distanceKm }) { hospital ->
+                val isSelected = selectedHospitalId == hospital.id
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
+                    colors = CardDefaults.cardColors(containerColor = if (isSelected) PrimaryTeal.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(if (isSelected) PrimaryTeal else SlateBorder)),
                     shape = RoundedCornerShape(14.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            selectedHospitalId = hospital.id
+                            mapViewInstance?.controller?.animateTo(GeoPoint(hospital.latitude, hospital.longitude))
+                            mapViewInstance?.controller?.setZoom(14.5)
+                        }
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -160,18 +282,34 @@ fun HospitalMapScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = {
-                                val uri = Uri.parse("geo:${hospital.latitude},${hospital.longitude}?q=${Uri.encode(hospital.name)}")
-                                val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
-                                try { context.startActivity(intent) } catch (e: Exception) { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
-                            },
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Navigate via Google Maps", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = {
+                                    selectedHospitalId = hospital.id
+                                    mapViewInstance?.controller?.animateTo(GeoPoint(hospital.latitude, hospital.longitude))
+                                    mapViewInstance?.controller?.setZoom(15.0)
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Focus Map", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            Button(
+                                onClick = {
+                                    val uri = Uri.parse("geo:${hospital.latitude},${hospital.longitude}?q=${Uri.encode(hospital.name)}")
+                                    val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
+                                    try { context.startActivity(intent) } catch (_: Exception) { context.startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                                },
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.weight(1.3f)
+                            ) {
+                                Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Google Maps", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }

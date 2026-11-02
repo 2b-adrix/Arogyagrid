@@ -1,5 +1,6 @@
 package com.example.arogyagrid
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,11 +13,19 @@ import com.example.arogyagrid.core.ThemeManager
 import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.presentation.navigation.AppNavigation
 import com.example.arogyagrid.presentation.theme.SmartHealthTheme
+import org.osmdroid.config.Configuration
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         UserSession.init(this)
+
+        // Initialize Osmdroid Configuration with compliant User-Agent to prevent 403/404 blocks
+        Configuration.getInstance().apply {
+            load(applicationContext, getSharedPreferences("osmdroid", Context.MODE_PRIVATE))
+            userAgentValue = "ArogyaGridApp/1.0 (Android; com.example.arogyagrid; contact@arogyagrid.com)"
+        }
+
         enableEdgeToEdge()
         setContent {
             val themeMode by ThemeManager.themeMode.collectAsState()
