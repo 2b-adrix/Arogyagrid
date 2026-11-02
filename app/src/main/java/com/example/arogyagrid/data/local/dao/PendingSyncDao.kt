@@ -11,20 +11,20 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface PendingSyncDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(entity: PendingSyncEntity): Long
+    suspend fun insert(entity: PendingSyncEntity): Long
 
     @Query("SELECT * FROM pending_sync_queue WHERE status = 'PENDING' OR status = 'FAILED' ORDER BY createdAt ASC")
-    fun getPendingOperations(): List<PendingSyncEntity>
+    suspend fun getPendingOperations(): List<PendingSyncEntity>
 
     @Query("SELECT COUNT(*) FROM pending_sync_queue WHERE status = 'PENDING' OR status = 'FAILED'")
     fun getPendingCountFlow(): Flow<Int>
 
     @Update
-    fun update(entity: PendingSyncEntity)
+    suspend fun update(entity: PendingSyncEntity)
 
     @Query("DELETE FROM pending_sync_queue WHERE id = :id")
-    fun deleteById(id: Long)
+    suspend fun deleteById(id: Long)
 
     @Query("DELETE FROM pending_sync_queue WHERE status = 'COMPLETED'")
-    fun clearCompleted()
+    suspend fun clearCompleted()
 }
