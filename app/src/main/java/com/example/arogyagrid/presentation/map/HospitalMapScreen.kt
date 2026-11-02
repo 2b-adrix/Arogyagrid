@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.example.arogyagrid.presentation.theme.*
 import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.MapTileProviderBasic
 import org.osmdroid.tileprovider.tilesource.TileSourcePolicy
 import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
@@ -62,10 +63,25 @@ fun HospitalMapScreen(
         true
     }
 
-    // Custom OpenStreetMap Tile Source with custom policy (bypasses Default Mapnik com.example block)
-    val osmLiveTileSource = remember {
+    // 1. Humanitarian OpenStreetMap (HOT) - 100% Free, NO API Key Required, highlights hospitals & health centers
+    val osmHotTileSource = remember {
         XYTileSource(
-            "OpenStreetMapLive",
+            "OpenStreetMapHOT",
+            0, 19, 256, ".png",
+            arrayOf(
+                "https://a.tile.openstreetmap.fr/hot/",
+                "https://b.tile.openstreetmap.fr/hot/",
+                "https://c.tile.openstreetmap.fr/hot/"
+            ),
+            "© OpenStreetMap contributors, Tiles style by Humanitarian OpenStreetMap Team hosted by OpenStreetMap France",
+            TileSourcePolicy(2, TileSourcePolicy.FLAG_NO_BULK or TileSourcePolicy.FLAG_NO_PREVENTIVE)
+        )
+    }
+
+    // 2. Official OpenStreetMap Standard Tiles - 100% Free, NO API Key Required
+    val osmStandardTileSource = remember {
+        XYTileSource(
+            "OpenStreetMapStandard",
             0, 19, 256, ".png",
             arrayOf("https://tile.openstreetmap.org/"),
             "© OpenStreetMap contributors",
@@ -73,21 +89,22 @@ fun HospitalMapScreen(
         )
     }
 
-    // High-performance OpenStreetMap CartoDB Voyager tiles (100% uptime vector raster)
-    val cartoVoyagerTileSource = remember {
+    // 3. OpenTopoMap - 100% Free OpenStreetMap with terrain & elevation contours, NO API Key Required
+    val osmTopoTileSource = remember {
         XYTileSource(
-            "CartoVoyager",
-            0, 19, 256, ".png",
+            "OpenTopoMap",
+            0, 17, 256, ".png",
             arrayOf(
-                "https://a.basemaps.cartocdn.com/rastertiles/voyager/",
-                "https://b.basemaps.cartocdn.com/rastertiles/voyager/",
-                "https://c.basemaps.cartocdn.com/rastertiles/voyager/"
+                "https://a.tile.opentopomap.org/",
+                "https://b.tile.opentopomap.org/",
+                "https://c.tile.opentopomap.org/"
             ),
-            "© OpenStreetMap contributors, © CARTO"
+            "Kartendaten: © OpenStreetMap-Mitwirkende, SRTM | Kartendarstellung: © OpenTopoMap (CC-BY-SA)",
+            TileSourcePolicy(2, TileSourcePolicy.FLAG_NO_BULK or TileSourcePolicy.FLAG_NO_PREVENTIVE)
         )
     }
 
-    var selectedTileSourceIndex by remember { mutableIntStateOf(0) } // 0 = CartoVoyager, 1 = OpenStreetMap Live
+    var selectedTileSourceIndex by remember { mutableIntStateOf(0) } // 0 = HOT (Healthcare), 1 = Standard OSM, 2 = Topo
     var selectedHospitalId by remember { mutableStateOf<String?>("FAC-JPR-001") }
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
 
@@ -140,23 +157,42 @@ fun HospitalMapScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = "Jaipur Health Grid", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextDark)
                     Text(
-                        text = if (selectedTileSourceIndex == 0) "OpenStreetMap (Voyager CDN)" else "OpenStreetMap (Standard Tiles)",
+                        text = when (selectedTileSourceIndex) {
+                            0 -> "OSM Humanitarian (No API Key)"
+                            1 -> "OSM Standard Tiles (No API Key)"
+                            else -> "OSM Topo Terrain (No API Key)"
+                        },
                         fontSize = 11.sp,
                         color = PrimaryTeal
                     )
                 }
                 FilterChip(
-                    selected = selectedTileSourceIndex == 1,
+                    selected = true,
                     onClick = {
-                        selectedTileSourceIndex = if (selectedTileSourceIndex == 0) 1 else 0
-                        val targetSource = if (selectedTileSourceIndex == 0) cartoVoyagerTileSource else osmLiveTileSource
-                        mapViewInstance?.setTileSource(targetSource)
-                        mapViewInstance?.invalidate()
+                        selectedTileSourceIndex = (selectedTileSourceIndex + 1) % 3
+                        val targetSource = when (selectedTileSourceIndex) {
+                            0 -> osmHotTileSource
+                            1 -> osmStandardTileSource
+                            else -> osmTopoTileSource
+                        }
+                        mapViewInstance?.let { mv ->
+                            mv.setTileSource(targetSource)
+                            mv.invalidate()
+                        }
                     },
                     leadingIcon = {
                         Icon(Icons.Default.Layers, contentDescription = null, modifier = Modifier.size(14.dp))
                     },
-                    label = { Text(if (selectedTileSourceIndex == 0) "Style: Voyager" else "Style: OSM Live", fontSize = 10.sp) }
+                    label = {
+                        Text(
+                            when (selectedTileSourceIndex) {
+                                0 -> "Layer: HOT"
+                                1 -> "Layer: Standard"
+                                else -> "Layer: Topo"
+                            },
+                            fontSize = 10.sp
+                        )
+                    }
                 )
             }
         }
@@ -164,9 +200,13 @@ fun HospitalMapScreen(
         Box(modifier = Modifier.fillMaxWidth().height(340.dp)) {
             AndroidView(
                 factory = { ctx ->
-                    MapView(ctx).apply {
-                        val initialSource = if (selectedTileSourceIndex == 0) cartoVoyagerTileSource else osmLiveTileSource
-                        setTileSource(initialSource)
+                    val initialSource = when (selectedTileSourceIndex) {
+                        0 -> osmHotTileSource
+                        1 -> osmStandardTileSource
+                        else -> osmTopoTileSource
+                    }
+                    val tileProvider = MapTileProviderBasic(ctx.applicationContext, initialSource)
+                    MapView(ctx, tileProvider).apply {
                         setMultiTouchControls(true)
                         controller.setZoom(12.5)
                         controller.setCenter(GeoPoint(26.8924, 75.8173))
