@@ -510,7 +510,7 @@ fun ColdChainScreen(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .background(
-                                        if (unit.isBreached) StatusRedBg else Color(0xFFE0F2FE),
+                                        if (unit.isBreached) StatusRedBg else MaterialTheme.colorScheme.primaryContainer,
                                         RoundedCornerShape(4.dp)
                                     ),
                                 contentAlignment = Alignment.Center
@@ -518,7 +518,7 @@ fun ColdChainScreen(
                                 Icon(
                                     imageVector = if (unit.isBreached) Icons.Default.Warning else Icons.Default.AcUnit,
                                     contentDescription = null,
-                                    tint = if (unit.isBreached) StatusRed else Color(0xFF0369A1),
+                                    tint = if (unit.isBreached) StatusRed else MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -527,23 +527,23 @@ fun ColdChainScreen(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Surface(
                                         shape = RoundedCornerShape(2.dp),
-                                        color = GovtNavyLight
+                                        color = MaterialTheme.colorScheme.primaryContainer
                                     ) {
                                         Text(
                                             text = unit.id,
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = GovtNavy,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                         )
                                     }
                                 }
                                 Spacer(modifier = Modifier.height(2.dp))
-                                Text(text = unit.name, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = GovtNavy)
+                                Text(text = unit.name, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                 Text(
                                     text = "${unit.facilityName} • मॉडल: ${unit.model}",
                                     fontSize = 11.sp,
-                                    color = TextMuted
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Column(horizontalAlignment = Alignment.End) {
@@ -555,7 +555,7 @@ fun ColdChainScreen(
                                 )
                                 Surface(
                                     shape = RoundedCornerShape(2.dp),
-                                    color = if (unit.isBreached) StatusRedBg else TirangaGreenLight
+                                    color = if (unit.isBreached) StatusRedBg else StatusGreenBg
                                 ) {
                                     Text(
                                         text = if (unit.isBreached) "तापमान विचलन" else "सुरक्षित सीमा",
@@ -574,7 +574,7 @@ fun ColdChainScreen(
                         Surface(
                             shape = RoundedCornerShape(3.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                            border = androidx.compose.foundation.BorderStroke(0.5.dp, SlateBorder),
+                            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
@@ -587,16 +587,16 @@ fun ColdChainScreen(
                                 Text(
                                     text = "मानक थर्मल सीमा: ${unit.minSafeTemp}°C से ${unit.maxSafeTemp}°C",
                                     fontSize = 10.5.sp,
-                                    color = TextDark,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Sensors, contentDescription = null, modifier = Modifier.size(12.dp), tint = GovtNavy)
+                                    Icon(Icons.Default.Sensors, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
                                         text = "पिंग: ${unit.lastPingSecondsAgo}s पूर्व • बैटरी: ${unit.batteryPercent}%",
                                         fontSize = 10.sp,
-                                        color = TextMuted
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -607,7 +607,7 @@ fun ColdChainScreen(
                         Text(
                             text = "संरक्षित बायोलॉजिकल/वैक्सीन: ${unit.storedSupplies.joinToString(", ")}",
                             fontSize = 11.sp,
-                            color = TextDark,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Normal
                         )
 
@@ -619,7 +619,7 @@ fun ColdChainScreen(
                             Text(
                                 text = "ऊर्जा स्रोत: ${unit.powerSource}",
                                 fontSize = 10.sp,
-                                color = TextMuted
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "eVIN IoT प्रमाणित",

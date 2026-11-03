@@ -113,7 +113,7 @@ fun EpidemicSurveillanceScreen(
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextDark)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                     Spacer(modifier = Modifier.width(4.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -121,12 +121,12 @@ fun EpidemicSurveillanceScreen(
                             text = "Epidemic Outbreak Surveillance",
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextDark
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Syndromic Consumption Spike Early-Warning System",
                             fontSize = 11.sp,
-                            color = PrimaryTeal
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                     Surface(
@@ -163,27 +163,27 @@ fun EpidemicSurveillanceScreen(
         ) {
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = PrimaryTeal.copy(alpha = 0.08f)),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(PrimaryTeal)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)),
+                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(MaterialTheme.colorScheme.primary)),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = PrimaryTeal, modifier = Modifier.size(20.dp))
+                            Icon(Icons.AutoMirrored.Filled.TrendingUp, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "7-Day Rolling vs 24h Demand Anomaly Model",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryTeal
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "ArogyaGrid monitors unexpected demand acceleration in essential rehydration and antibiotic supplies to flag regional outbreaks 48-72 hours before traditional clinical reporting.",
                             fontSize = 11.sp,
-                            color = TextDark
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -194,9 +194,9 @@ fun EpidemicSurveillanceScreen(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = CardDefaults.outlinedCardBorder().copy(
-                        brush = SolidColor(if (isCritical) StatusRed else SlateBorder)
+                        brush = SolidColor(if (isCritical) StatusRed else MaterialTheme.colorScheme.outline)
                     ),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(10.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -224,12 +224,12 @@ fun EpidemicSurveillanceScreen(
                                     text = cluster.diseaseCategory,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TextDark
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "${cluster.affectedFacilityName} • ${cluster.focalBlock}",
                                     fontSize = 11.sp,
-                                    color = TextMuted
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Surface(
@@ -257,15 +257,15 @@ fun EpidemicSurveillanceScreen(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Column {
-                                Text("Baseline Demand", fontSize = 10.sp, color = TextMuted)
-                                Text("${cluster.baselineDailyDemand} units/day", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                Text("Baseline Demand", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("${cluster.baselineDailyDemand} units/day", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             }
                             Column {
-                                Text("Current 24h Influx", fontSize = 10.sp, color = TextMuted)
+                                Text("Current 24h Influx", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("${cluster.current24hDemand} units/day", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isCritical) StatusRed else StatusOrange)
                             }
                             Column {
-                                Text("Stockout Window", fontSize = 10.sp, color = TextMuted)
+                                Text("Stockout Window", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Text("${cluster.hoursToTotalStockout.toInt()} hours", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = StatusRed)
                             }
                         }
@@ -276,14 +276,14 @@ fun EpidemicSurveillanceScreen(
                             text = "Triggers: ${cluster.triggerMedicines.joinToString(", ")}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = TextDark
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "Action Strategy: ${cluster.donorHubRecommendation}",
                             fontSize = 11.sp,
-                            color = PrimaryTeal,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium
                         )
 
@@ -296,16 +296,20 @@ fun EpidemicSurveillanceScreen(
                             OutlinedButton(
                                 onClick = onNavigateToMap,
                                 shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary)
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Route Map", fontSize = 11.sp)
+                                Text("Route Map", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                             Button(
                                 onClick = onNavigateToTransfer,
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
                                 modifier = Modifier.weight(1.3f)
                             ) {
                                 Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(14.dp))
