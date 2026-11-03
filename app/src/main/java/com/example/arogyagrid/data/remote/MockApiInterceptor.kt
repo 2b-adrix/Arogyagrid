@@ -292,7 +292,7 @@ class MockApiInterceptor(
             val jsonStr = buffer.readUtf8()
             val jsonObj = JSONObject(jsonStr)
             promptText = jsonObj.optString("prompt", "")
-        } catch (_: Exception) {}
+        } catch (e: Exception) {}
 
         val answerText = when {
             promptText.contains("Amoxicillin", ignoreCase = true) || promptText.contains("risk", ignoreCase = true) -> {

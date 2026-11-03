@@ -2,19 +2,16 @@ package com.example.arogyagrid.presentation.components
 
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -209,7 +205,7 @@ fun GovtCampaignCarousel(
                                 text = slide.actionText,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = SlateTextDark
                             )
                         }
                     }
@@ -305,7 +301,7 @@ fun GovtServicesGrid(
                                 .clickable {
                                     if (service.route.startsWith("tel:")) {
                                         val intent = Intent(Intent.ACTION_DIAL, Uri.parse(service.route))
-                                        try { context.startActivity(intent) } catch (_: Exception) {}
+                                        try { context.startActivity(intent) } catch (e: Exception) {}
                                     } else {
                                         onNavigateToScreen(service.route)
                                     }
@@ -317,7 +313,7 @@ fun GovtServicesGrid(
                                     .padding(vertical = 10.dp, horizontal = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                val isDark = MaterialTheme.colorScheme.background.red < 0.15f
+                                val isDark = isSystemInDarkTheme()
                                 val resolvedIconBg = if (isDark) service.iconTint.copy(alpha = 0.18f) else service.badgeColor
 
                                 Box(
@@ -504,7 +500,7 @@ fun GovtGazetteCirculars() {
 @Composable
 fun GovtEmergencyHelplineBanner() {
     val context = LocalContext.current
-    val isDark = MaterialTheme.colorScheme.background.red < 0.15f
+    val isDark = isSystemInDarkTheme()
 
     Surface(
         shape = RoundedCornerShape(6.dp),
@@ -550,14 +546,14 @@ fun GovtEmergencyHelplineBanner() {
             Button(
                 onClick = {
                     val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:108"))
-                    try { context.startActivity(intent) } catch (_: Exception) {}
+                    try { context.startActivity(intent) } catch (e: Exception) {}
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = StatusRed),
                 shape = RoundedCornerShape(3.dp),
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                 modifier = Modifier.height(28.dp)
             ) {
-                Text("108 डायल करें", fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                Text("108 डायल करें", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }

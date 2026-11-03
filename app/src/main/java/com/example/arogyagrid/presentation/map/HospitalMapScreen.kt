@@ -238,7 +238,7 @@ fun HospitalMapScreen(
                         hospitals = getFallbackHospitalList(currentLang)
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 hospitals = getFallbackHospitalList(currentLang)
             } finally {
                 isLoading = false
@@ -1006,7 +1006,7 @@ fun HospitalMapScreen(
                                                 val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
                                                 try {
                                                     context.startActivity(intent)
-                                                } catch (_: Exception) {
+                                                } catch (e: Exception) {
                                                     context.startActivity(Intent(Intent.ACTION_VIEW, uri))
                                                 }
                                             },
@@ -1293,7 +1293,7 @@ fun HospitalMapScreen(
                                             val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
                                             try {
                                                 context.startActivity(intent)
-                                            } catch (_: Exception) {
+                                            } catch (e: Exception) {
                                                 context.startActivity(Intent(Intent.ACTION_VIEW, uri))
                                             }
                                         },

@@ -348,7 +348,7 @@ fun AiAssistantScreen(
                         }
                         try {
                             speechLauncher.launch(intent)
-                        } catch (_: Exception) {}
+                        } catch (e: Exception) {}
                     },
                     modifier = Modifier
                         .size(44.dp)

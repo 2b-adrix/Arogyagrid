@@ -52,7 +52,7 @@ class DashboardRepositoryImpl {
             } else {
                 getOfflineFallback()
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             getOfflineFallback()
         }
     }
@@ -66,7 +66,7 @@ class DashboardRepositoryImpl {
                     db.facilityDao().getFacilityCount()
                 }
                 if (count > 0) count.toLong() else 15L
-            } catch (_: Exception) { 15L }
+            } catch (e: Exception) { 15L }
         } else { 15L }
 
         return Result.success(

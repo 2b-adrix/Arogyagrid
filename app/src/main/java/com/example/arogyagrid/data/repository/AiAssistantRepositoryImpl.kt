@@ -54,7 +54,7 @@ class AiAssistantRepositoryImpl {
                     )
                 )
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             val fallback = HealthcareAiEngine.generateIntelligentResponse(prompt)
             Result.success(
                 AiChatResult(

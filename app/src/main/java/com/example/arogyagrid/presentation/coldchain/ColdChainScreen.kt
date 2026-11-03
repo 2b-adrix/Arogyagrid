@@ -1,11 +1,10 @@
 package com.example.arogyagrid.presentation.coldchain
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.res.painterResource
 import com.example.arogyagrid.R
@@ -16,13 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AcUnit
-import androidx.compose.material.icons.filled.BatteryChargingFull
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeviceThermostat
-import androidx.compose.material.icons.filled.ElectricBolt
-import androidx.compose.material.icons.filled.NotificationImportant
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SecurityUpdateWarning
 import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
@@ -30,8 +23,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,28 +36,27 @@ data class ColdChainUnit(
     val facilityId: String,
     val facilityName: String,
     val model: String,
-    var currentTempCelsius: Double,
+    val currentTempCelsius: Double,
     val minSafeTemp: Double,
     val maxSafeTemp: Double,
     val humidityPercent: Int,
     val batteryPercent: Int,
     val storedSupplies: List<String>,
     val lastPingSecondsAgo: Int,
-    val powerSource: String
+    val powerSource: String,
 ) {
     val isBreached: Boolean
-        get() = currentTempCelsius < minSafeTemp || currentTempCelsius > maxSafeTemp
+        get() = (currentTempCelsius < minSafeTemp) || (currentTempCelsius > maxSafeTemp)
 
     val statusText: String
         get() = when {
-            currentTempCelsius > maxSafeTemp -> "CRITICAL EXCURSION (HIGH)"
-            currentTempCelsius < minSafeTemp -> "FREEZING RISK (LOW)"
-            currentTempCelsius in (maxSafeTemp - 0.8)..maxSafeTemp -> "WARNING ELEVATED"
-            else -> "OPTIMAL RANGE"
+            currentTempCelsius > maxSafeTemp -> "CRITICAL HIGH"
+            currentTempCelsius < minSafeTemp -> "FREEZING LOW"
+            currentTempCelsius in (maxSafeTemp - 0.8)..maxSafeTemp -> "ELEVATED"
+            else -> "OPTIMAL"
         }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ColdChainScreen(
     onNavigateBack: () -> Unit
@@ -222,7 +214,7 @@ fun ColdChainScreen(
                     Surface(
                         shape = RoundedCornerShape(3.dp),
                         color = if (breachedUnitsCount > 0) StatusRedBg else StatusGreenBg,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, if (breachedUnitsCount > 0) StatusRed else TirangaGreen)
+                        border = BorderStroke(1.dp, if (breachedUnitsCount > 0) StatusRed else TirangaGreen)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -312,7 +304,7 @@ fun ColdChainScreen(
             item {
                 Card(
                     shape = RoundedCornerShape(4.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, SlateBorder),
+                    border = BorderStroke(1.dp, SlateBorder),
                     elevation = CardDefaults.cardElevation(2.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -320,7 +312,7 @@ fun ColdChainScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                Brush.horizontalGradient(
                                     listOf(Color(0xFF064E3B), Color(0xFF046A38), Color(0xFF0D9488))
                                 )
                             )
@@ -334,7 +326,7 @@ fun ColdChainScreen(
                                 Surface(
                                     shape = RoundedCornerShape(3.dp),
                                     color = Color.White.copy(alpha = 0.2f),
-                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.White.copy(alpha = 0.4f))
+                                    border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.4f))
                                 ) {
                                     Text(
                                         text = "NHM • UNDP • राजस्थान सरकार",
@@ -388,7 +380,7 @@ fun ColdChainScreen(
                 item {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(StatusRed)),
+                        border = BorderStroke(1.dp, StatusRed),
                         shape = RoundedCornerShape(4.dp),
                         elevation = CardDefaults.cardElevation(1.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -428,7 +420,7 @@ fun ColdChainScreen(
                                     Text(
                                         text = "${primaryBreached.name} (${primaryBreached.facilityName}) का तापमान ${primaryBreached.currentTempCelsius}°C है (सुरक्षित सीमा: ${primaryBreached.maxSafeTemp}°C)।",
                                         fontSize = 11.sp,
-                                        color = TextDark
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(6.dp))
@@ -469,7 +461,7 @@ fun ColdChainScreen(
                                 }
                             },
                             shape = RoundedCornerShape(3.dp),
-                            border = androidx.compose.foundation.BorderStroke(0.8.dp, StatusRed),
+                            border = BorderStroke(0.8.dp, StatusRed),
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 3.dp)
                         ) {
                             Text("विचलन सिम्युलेट", fontSize = 10.sp, color = StatusRed, fontWeight = FontWeight.Bold)
@@ -481,7 +473,7 @@ fun ColdChainScreen(
                                 }
                             },
                             shape = RoundedCornerShape(3.dp),
-                            border = androidx.compose.foundation.BorderStroke(0.8.dp, TirangaGreen),
+                            border = BorderStroke(0.8.dp, TirangaGreen),
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 3.dp)
                         ) {
                             Text("सामान्य रीसेट", fontSize = 10.sp, color = TirangaGreen, fontWeight = FontWeight.Bold)
@@ -499,7 +491,7 @@ fun ColdChainScreen(
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(cardBorderColor)),
+                    border = BorderStroke(1.dp, cardBorderColor),
                     shape = RoundedCornerShape(4.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -558,7 +550,7 @@ fun ColdChainScreen(
                                     color = if (unit.isBreached) StatusRedBg else StatusGreenBg
                                 ) {
                                     Text(
-                                        text = if (unit.isBreached) "तापमान विचलन" else "सुरक्षित सीमा",
+                                        text = if (unit.isBreached) "विचलन (${unit.statusText})" else "सुरक्षित (${unit.statusText})",
                                         fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = if (unit.isBreached) StatusRed else TirangaGreen,
@@ -574,7 +566,7 @@ fun ColdChainScreen(
                         Surface(
                             shape = RoundedCornerShape(3.dp),
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
