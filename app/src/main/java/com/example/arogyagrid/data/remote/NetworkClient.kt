@@ -18,9 +18,9 @@ object NetworkClient {
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor())
         .addInterceptor(loggingInterceptor)
-        .connectTimeout(75, TimeUnit.SECONDS)
-        .readTimeout(75, TimeUnit.SECONDS)
-        .writeTimeout(75, TimeUnit.SECONDS)
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(10, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
         .build()
 
     val apiService: ApiService by lazy {

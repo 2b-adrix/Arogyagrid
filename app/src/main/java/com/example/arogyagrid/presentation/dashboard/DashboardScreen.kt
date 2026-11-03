@@ -1,10 +1,6 @@
 package com.example.arogyagrid.presentation.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -13,8 +9,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,21 +23,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ListAlt
-import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Coronavirus
+import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.LocalHospital
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PendingActions
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,6 +45,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -64,15 +63,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.arogyagrid.domain.model.AlertItem
-import com.example.arogyagrid.domain.model.Facility
 import com.example.arogyagrid.presentation.components.CommandTopBar
+import com.example.arogyagrid.presentation.components.GovtCampaignCarousel
+import com.example.arogyagrid.presentation.components.GovtEmergencyHelplineBanner
+import com.example.arogyagrid.presentation.components.GovtGazetteCirculars
+import com.example.arogyagrid.presentation.components.GovtPortalFooter
+import com.example.arogyagrid.presentation.components.GovtServicesGrid
 import com.example.arogyagrid.presentation.components.MetricCard
 import com.example.arogyagrid.presentation.components.RiskBadge
 import com.example.arogyagrid.presentation.components.SyntheticDataBanner
-import com.example.arogyagrid.presentation.theme.AccentBlue
-import com.example.arogyagrid.presentation.theme.AccentBlueLight
+import com.example.arogyagrid.presentation.theme.GovtNavy
+import com.example.arogyagrid.presentation.theme.GovtNavyLight
 import com.example.arogyagrid.presentation.theme.PrimaryTeal
-import com.example.arogyagrid.presentation.theme.PrimaryTealLight
 import com.example.arogyagrid.presentation.theme.SlateBorder
 import com.example.arogyagrid.presentation.theme.StatusOrange
 import com.example.arogyagrid.presentation.theme.StatusOrangeBg
@@ -80,6 +82,8 @@ import com.example.arogyagrid.presentation.theme.StatusRed
 import com.example.arogyagrid.presentation.theme.StatusRedBg
 import com.example.arogyagrid.presentation.theme.TextDark
 import com.example.arogyagrid.presentation.theme.TextMuted
+import com.example.arogyagrid.presentation.theme.TirangaSaffron
+import com.example.arogyagrid.presentation.theme.TirangaSaffronLight
 import com.example.arogyagrid.presentation.viewmodel.DashboardViewModel
 
 @Composable
@@ -113,106 +117,110 @@ fun DashboardScreen(
             onProfileClick = { onNavigateToScreen("profile") }
         )
 
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = PrimaryTeal)
-            }
-        } else if (uiState.error != null) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(24.dp)
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+        ) {
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = uiState.error ?: "Error loading dashboard",
-                        color = StatusRed,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { viewModel.loadDashboard() }) {
-                            Text("Retry")
-                        }
-                        OutlinedButton(onClick = { onNavigateToScreen("inventory") }) {
-                            Text("Inventory")
-                        }
-                        OutlinedButton(onClick = { onNavigateToScreen("profile") }) {
-                            Text("Profile")
+                    CircularProgressIndicator(color = PrimaryTeal)
+                }
+            } else if (uiState.error != null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Text(
+                            text = uiState.error ?: "Error loading dashboard",
+                            color = StatusRed,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { viewModel.loadDashboard() }) {
+                                Text("Retry")
+                            }
+                            OutlinedButton(onClick = { onNavigateToScreen("inventory") }) {
+                                Text("Inventory")
+                            }
+                            OutlinedButton(onClick = { onNavigateToScreen("profile") }) {
+                                Text("Profile")
+                            }
                         }
                     }
                 }
-            }
-        } else if (uiState.data != null) {
-            val sum = uiState.data!!
-            AnimatedVisibility(
-                visible = true,
-                enter = fadeIn(animationSpec = tween(600)) + slideInVertically(initialOffsetY = { 40 })
-            ) {
+            } else if (uiState.data != null) {
+                val sum = uiState.data!!
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // Header Title
+                    // ── 1. Official Government Scheme Awareness Carousel (SWAYAM / UMANG Style) ──
                     item {
-                        Column {
-                            Text(
-                                text = "HEALTHCARE COMMAND CENTER",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = PrimaryTeal,
-                                letterSpacing = 1.2.sp
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "District Operations Dashboard",
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = TextDark
-                            )
-                            Text(
-                                text = "${sum.totalFacilities} facilities monitored • Live resource intelligence & demand forecasting",
-                                fontSize = 12.sp,
-                                color = TextMuted
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
+                        GovtCampaignCarousel(onNavigateToScreen = onNavigateToScreen)
+                    }
+
+                    // ── 2. Official 8-Service Portals Grid (e-Aushadhi, eVIN, IDSP, HMIS, CDSS, etc.) ──
+                    item {
+                        GovtServicesGrid(onNavigateToScreen = onNavigateToScreen)
+                    }
+
+                    // ── 3. Epidemic Alert Banner (Formal Disease Surveillance Bulletin) ──
+                    item {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(StatusRed)),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onNavigateToScreen("outbreak_surveillance") }
+                        ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(IntrinsicSize.Min),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                AssistChip(
-                                    onClick = { onNavigateToScreen("ai_assistant") },
-                                    label = { Text("AI Copilot", fontSize = 10.sp) },
-                                    leadingIcon = { Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = PrimaryTeal) }
+                                Box(
+                                    modifier = Modifier
+                                        .width(4.dp)
+                                        .fillMaxHeight()
+                                        .background(StatusRed)
                                 )
-                                AssistChip(
-                                    onClick = { onNavigateToScreen("hospital_map") },
-                                    label = { Text("Live Map", fontSize = 10.sp) },
-                                    leadingIcon = { Icon(Icons.Default.Map, contentDescription = null, tint = PrimaryTeal) }
-                                )
-                                AssistChip(
-                                    onClick = { onNavigateToScreen("beds_staff") },
-                                    label = { Text("Beds", fontSize = 10.sp) },
-                                    leadingIcon = { Icon(Icons.Default.LocalHospital, contentDescription = null, tint = AccentBlue) }
-                                )
-                                AssistChip(
-                                    onClick = { onNavigateToScreen("audit_logs") },
-                                    label = { Text("Audit", fontSize = 10.sp) },
-                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.ListAlt, contentDescription = null, tint = TextMuted) }
-                                )
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .background(StatusRedBg, RoundedCornerShape(4.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Coronavirus, contentDescription = null, tint = StatusRed, modifier = Modifier.size(18.dp))
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("राज्य महामारी निगरानी बुलेटिन • आमेर ब्लॉक (Amer Block)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = StatusRed)
+                                        Text("तीव्र अतिसार प्रकोप (+340% मांग वृद्धि) • ओआरएस स्टॉक 38 घंटे में समाप्त होने का पूर्वानुमान। विवरण देखें →", fontSize = 10.5.sp, color = TextDark)
+                                    }
+                                }
                             }
                         }
                     }
 
-                    // 2x2 Metric Grid
+                    // ── 4. 2x2 Metric Grid (Structured Government Informatics) ──
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(
@@ -220,23 +228,23 @@ fun DashboardScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 MetricCard(
-                                    label = "Total Facilities",
+                                    label = "पंजीकृत संस्थान (Facilities)",
                                     value = "${sum.totalFacilities}",
-                                    sub = "Tap for Live Map →",
+                                    sub = "लाइव मानचित्र देखें →",
                                     icon = Icons.Default.Business,
-                                    iconBgColor = PrimaryTealLight,
-                                    iconTintColor = PrimaryTeal,
+                                    iconBgColor = GovtNavyLight,
+                                    iconTintColor = GovtNavy,
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable { onNavigateToScreen("hospital_map") }
                                 )
                                 MetricCard(
-                                    label = "Bed Occupancy",
+                                    label = "शय्या उपयोग दर (Bed Occupancy)",
                                     value = "${sum.bedOccupancyPercentage}%",
-                                    sub = "${sum.occupiedBeds}/${sum.totalBeds} occupied",
-                                    icon = Icons.Default.Favorite,
-                                    iconBgColor = AccentBlueLight,
-                                    iconTintColor = AccentBlue,
+                                    sub = "${sum.occupiedBeds}/${sum.totalBeds} शय्याएं उपयोग में",
+                                    icon = Icons.Default.LocalHospital,
+                                    iconBgColor = TirangaSaffronLight,
+                                    iconTintColor = TirangaSaffron,
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable { onNavigateToScreen("beds_staff") }
@@ -248,19 +256,19 @@ fun DashboardScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 MetricCard(
-                                    label = "Stockout Risks",
+                                    label = "स्टॉक संकट (Stockout Deficit)",
                                     value = "${sum.criticalRisks}",
-                                    sub = "${sum.highRisks} High Risks",
+                                    sub = "${sum.highRisks} उच्च जोखिम मदें",
                                     icon = Icons.Default.Warning,
                                     iconBgColor = StatusRedBg,
                                     iconTintColor = StatusRed,
                                     modifier = Modifier.weight(1f)
                                 )
                                 MetricCard(
-                                    label = "Active Alerts",
-                                    value = "${sum.activeAlerts}",
-                                    sub = "${sum.pendingRedistributions} Pending Transfers",
-                                    icon = Icons.Default.Notifications,
+                                    label = "लंबित अनुमोदन (Pending Orders)",
+                                    value = "${sum.pendingRedistributions}",
+                                    sub = "CMHO स्तर पर लंबित",
+                                    icon = Icons.Default.PendingActions,
                                     iconBgColor = StatusOrangeBg,
                                     iconTintColor = StatusOrange,
                                     modifier = Modifier.weight(1f)
@@ -269,50 +277,68 @@ fun DashboardScreen(
                         }
                     }
 
-                    // Pending Transfer Prompt
+                    // ── 5. Pending Transfer Prompt (Official RMSCL Drug Redistribution) ──
                     if (sum.pendingRedistributions > 0) {
                         item {
                             Card(
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                 border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
-                                elevation = CardDefaults.cardElevation(2.dp),
-                                shape = RoundedCornerShape(16.dp),
+                                elevation = CardDefaults.cardElevation(1.dp),
+                                shape = RoundedCornerShape(4.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    Text(
-                                        text = "Pending Redistribution Recommendations",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = PrimaryTeal
-                                    )
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "औषधि पुनर्वितरण प्रस्ताव • Requisition Orders",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 13.5.sp,
+                                            color = GovtNavy
+                                        )
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        Surface(
+                                            shape = RoundedCornerShape(3.dp),
+                                            color = StatusOrangeBg
+                                        ) {
+                                            Text(
+                                                text = "${sum.pendingRedistributions} लंबित",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = StatusOrange,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "There are ${sum.pendingRedistributions} pending stock transfer recommendations awaiting approval.",
-                                        fontSize = 12.sp,
+                                        text = "जिले के प्राथमिक स्वास्थ्य केंद्रों में आपूर्ति संतुलन हेतु अंतर-संस्थान औषधि स्थानांतरण प्रस्ताव तैयार हैं। मुख्य चिकित्सा अधिकारी (CMHO) के डिजिटल अनुमोदन उपरांत ग्रीन कॉरिडोर गेट पास जारी होगा।",
+                                        fontSize = 11.5.sp,
                                         color = TextMuted
                                     )
-                                    Spacer(modifier = Modifier.height(14.dp))
+                                    Spacer(modifier = Modifier.height(12.dp))
                                     Button(
                                         onClick = onNavigateToRedistribution,
-                                        shape = RoundedCornerShape(10.dp),
+                                        shape = RoundedCornerShape(4.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = GovtNavy),
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Text("Review & Approve Transfers", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("पुनर्वितरण प्रस्ताव समीक्षा व डिजिटल अनुमोदन (Review & Approve)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Recent Alerts
+                    // ── 6. Recent Alerts (Official Gazette/Notices style) ──
                     if (sum.recentAlerts.isNotEmpty()) {
                         item {
                             Text(
-                                text = "Active District Alerts",
-                                fontSize = 15.sp,
+                                text = "सक्रिय जिला चेतावनियाँ • District Health Advisories",
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextDark
+                                color = GovtNavy
                             )
                         }
                         items(sum.recentAlerts, key = { it.id }) { alert ->
@@ -320,37 +346,50 @@ fun DashboardScreen(
                                 onClick = { selectedAlert = alert },
                                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                                 border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
-                                elevation = CardDefaults.cardElevation(1.dp),
-                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(0.dp),
+                                shape = RoundedCornerShape(4.dp),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(14.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(IntrinsicSize.Min),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(10.dp)
-                                            .clip(CircleShape)
+                                            .width(4.dp)
+                                            .fillMaxHeight()
                                             .background(if (alert.severity == "CRITICAL") StatusRed else StatusOrange)
                                     )
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(alert.title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                                        Text(alert.message, fontSize = 11.sp, color = TextMuted)
+                                    Row(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .clip(CircleShape)
+                                                .background(if (alert.severity == "CRITICAL") StatusRed else StatusOrange)
+                                        )
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(alert.title, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                            Text(alert.message, fontSize = 11.sp, color = TextMuted)
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
-                    // Top Stockout Risks
+                    // ── 7. Top Stockout Risks (RMSCL Essential Drug List Risk Matrix) ──
                     item {
                         Text(
-                            text = "Priority Stockout Risks",
-                            fontSize = 16.sp,
+                            text = "प्राथमिकता स्टॉकआउट जोखिम • Critical Drug Deficit Matrix",
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextDark
+                            color = GovtNavy
                         )
                     }
 
@@ -358,11 +397,11 @@ fun DashboardScreen(
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
-                            elevation = CardDefaults.cardElevation(1.dp),
-                            shape = RoundedCornerShape(14.dp),
+                            elevation = CardDefaults.cardElevation(0.dp),
+                            shape = RoundedCornerShape(4.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(14.dp)) {
+                            Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -372,8 +411,8 @@ fun DashboardScreen(
                                         Text(
                                             text = risk.medicineName,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 15.sp,
-                                            color = TextDark
+                                            fontSize = 14.sp,
+                                            color = GovtNavy
                                         )
                                         Text(
                                             text = risk.facilityName,
@@ -383,23 +422,38 @@ fun DashboardScreen(
                                     }
                                     RiskBadge(riskLevel = risk.severity)
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Text(
-                                    text = "Days to Stockout: ${risk.daysToStockout} • Risk Score: ${risk.riskScore}",
-                                    fontSize = 12.sp,
+                                    text = "स्टॉक शेष: ${risk.daysToStockout} दिन • जोखिम सूचकांक: ${risk.riskScore}",
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = TextDark
                                 )
                                 if (!risk.recommendation.isNullOrEmpty()) {
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = risk.recommendation ?: "",
-                                        fontSize = 11.sp,
+                                        text = "सुझाव: ${risk.recommendation}",
+                                        fontSize = 10.5.sp,
                                         color = TextMuted
                                     )
                                 }
                             }
                         }
+                    }
+
+                    // ── 8. Official Rajasthan Health Gazette & Circulars Notice Board ──
+                    item {
+                        GovtGazetteCirculars()
+                    }
+
+                    // ── 9. Official Emergency Helplines 104 / 108 / 1070 ──
+                    item {
+                        GovtEmergencyHelplineBanner()
+                    }
+
+                    // ── 10. Official National Informatics Centre (NIC) Seal & Footer ──
+                    item {
+                        GovtPortalFooter()
                     }
                 }
             }
@@ -409,7 +463,7 @@ fun DashboardScreen(
     selectedAlert?.let { alert ->
         AlertDialog(
             onDismissRequest = { selectedAlert = null },
-            title = { Text(alert.title) },
+            title = { Text(alert.title, fontWeight = FontWeight.Bold, color = GovtNavy) },
             text = {
                 Column {
                     Text(alert.message, fontSize = 12.sp)
@@ -418,8 +472,12 @@ fun DashboardScreen(
                 }
             },
             confirmButton = {
-                Button(onClick = { selectedAlert = null }) {
-                    Text("OK")
+                Button(
+                    onClick = { selectedAlert = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = GovtNavy),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text("स्वीकार करें (Acknowledge)")
                 }
             }
         )
@@ -428,7 +486,7 @@ fun DashboardScreen(
     if (showBroadcastDialog) {
         AlertDialog(
             onDismissRequest = { showBroadcastDialog = false },
-            title = { Text("Emergency District Broadcast") },
+            title = { Text("Emergency District Broadcast", fontWeight = FontWeight.Bold, color = GovtNavy) },
             text = {
                 Column {
                     Text("Broadcast an emergency stock advisory to all facilities.", fontSize = 12.sp, color = TextMuted)
@@ -446,7 +504,9 @@ fun DashboardScreen(
                     onClick = {
                         successToast = "Emergency broadcast dispatched successfully."
                         showBroadcastDialog = false
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = GovtNavy),
+                    shape = RoundedCornerShape(4.dp)
                 ) {
                     Text("Broadcast Now")
                 }
@@ -462,10 +522,10 @@ fun DashboardScreen(
     if (showReportDialog) {
         AlertDialog(
             onDismissRequest = { showReportDialog = false },
-            title = { Text("District Operations Report") },
+            title = { Text("District Operations Report", fontWeight = FontWeight.Bold, color = GovtNavy) },
             text = {
                 Column {
-                    Text("Official State Health Operations Summary", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryTeal)
+                    Text("Official State Health Operations Summary", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = GovtNavy)
                     Spacer(modifier = Modifier.height(6.dp))
                     Text("• Total Facilities: ${uiState.data?.totalFacilities ?: 0}\n• Bed Occupancy: ${uiState.data?.bedOccupancyPercentage ?: 0}%\n• Critical Risks: ${uiState.data?.criticalRisks ?: 0}", fontSize = 12.sp)
                 }
@@ -475,7 +535,9 @@ fun DashboardScreen(
                     onClick = {
                         successToast = "Official report generated."
                         showReportDialog = false
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = GovtNavy),
+                    shape = RoundedCornerShape(4.dp)
                 ) {
                     Text("Close")
                 }
@@ -486,10 +548,14 @@ fun DashboardScreen(
     successToast?.let { msg ->
         AlertDialog(
             onDismissRequest = { successToast = null },
-            title = { Text("Notification") },
+            title = { Text("Notification", fontWeight = FontWeight.Bold, color = GovtNavy) },
             text = { Text(msg) },
             confirmButton = {
-                Button(onClick = { successToast = null }) {
+                Button(
+                    onClick = { successToast = null },
+                    colors = ButtonDefaults.buttonColors(containerColor = GovtNavy),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
                     Text("OK")
                 }
             }

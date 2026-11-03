@@ -27,6 +27,8 @@ import com.example.arogyagrid.presentation.facility.RegisterFacilityScreen
 import com.example.arogyagrid.presentation.forecast.ForecastScreen
 import com.example.arogyagrid.presentation.inventory.InventoryScreen
 import com.example.arogyagrid.presentation.map.HospitalMapScreen
+import com.example.arogyagrid.presentation.coldchain.ColdChainScreen
+import com.example.arogyagrid.presentation.outbreak.EpidemicSurveillanceScreen
 import com.example.arogyagrid.presentation.profile.ProfileScreen
 import com.example.arogyagrid.presentation.redistribution.RedistributionReviewScreen
 import com.example.arogyagrid.presentation.resources.BedsStaffScreen
@@ -72,7 +74,7 @@ fun AppNavigation() {
 
     Scaffold(
         bottomBar = {
-            if (currentRoute != "login" && currentRoute != "splash" && currentRoute != "register_facility" && currentRoute != "hospital_map") {
+            if (currentRoute != "login" && currentRoute != "splash" && currentRoute != "register_facility" && currentRoute != "hospital_map" && currentRoute != "cold_chain" && currentRoute != "outbreak_surveillance") {
                 NavigationBar {
                     navItems.forEach { item ->
                         NavigationBarItem(
@@ -143,7 +145,12 @@ fun AppNavigation() {
                 ForecastScreen(viewModel = forecastViewModel)
             }
             composable("ai_assistant") {
-                AiAssistantScreen(viewModel = aiAssistantViewModel)
+                AiAssistantScreen(
+                    viewModel = aiAssistantViewModel,
+                    onNavigateToScreen = { route ->
+                        navController.navigate(route)
+                    }
+                )
             }
             composable("audit_logs") {
                 AuditLogsScreen(viewModel = auditViewModel)
@@ -181,6 +188,26 @@ fun AppNavigation() {
                 HospitalMapScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    }
+                )
+            }
+            composable("cold_chain") {
+                ColdChainScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("outbreak_surveillance") {
+                EpidemicSurveillanceScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToMap = {
+                        navController.navigate("hospital_map")
+                    },
+                    onNavigateToTransfer = {
+                        navController.navigate("redistribution")
                     }
                 )
             }

@@ -1,0 +1,87 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="140dp"
+    android:height="100dp"
+    android:viewportWidth="140"
+    android:viewportHeight="100">
+
+    <!-- Background Glow Circle -->
+    <path
+        android:fillColor="#15FFFFFF"
+        android:pathData="M70,50m-46,0a46,46 0,1 1,92 0a46,46 0,1 1,-92 0" />
+
+    <!-- Pharmacy Cabinet / Shelf Background -->
+    <path
+        android:fillColor="#30FFFFFF"
+        android:pathData="M20,20h100v6H20z M20,55h100v4H20z M20,85h100v4H20z" />
+
+    <!-- Medicine Bottles -->
+    <!-- Bottle 1 (Amber Syrup with White Cap) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M26,32h14v22h-14z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M29,27h8v5h-8z" />
+    <!-- Label on Bottle 1 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M27,38h12v10h-12z" />
+    <path
+        android:fillColor="#DC2626"
+        android:pathData="M31,43h4v1h-4z M32.5,41.5v4h1v-4z" />
+
+    <!-- Bottle 2 (Blue Tablet Jar) -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M44,28h18v26h-18z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M47,23h12v5h-12z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M46,35h14v12h-14z" />
+    <path
+        android:fillColor="#0284C7"
+        android:pathData="M49,39h8v4h-8z" />
+
+    <!-- Blister Strip with 6 capsules -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M66,24h26v30h-26z" />
+    <!-- Capsules row 1 -->
+    <path android:fillColor="#EF4444" android:pathData="M70,27h5v8h-5z" />
+    <path android:fillColor="#FBBF24" android:pathData="M70,35h5v3h-5z" />
+    <path android:fillColor="#10B981" android:pathData="M81,27h5v8h-5z" />
+    <path android:fillColor="#60A5FA" android:pathData="M81,35h5v3h-5z" />
+    <!-- Capsules row 2 -->
+    <path android:fillColor="#3B82F6" android:pathData="M70,41h5v8h-5z" />
+    <path android:fillColor="#F59E0B" android:pathData="M70,49h5v3h-5z" />
+    <path android:fillColor="#EC4899" android:pathData="M81,41h5v8h-5z" />
+    <path android:fillColor="#A855F7" android:pathData="M81,49h5v3h-5z" />
+
+    <!-- Doctor Stethoscope & Clipboard on Lower Shelf -->
+    <!-- Stethoscope Loop -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M98,40 C98,62 120,62 120,40 M109,56 v12" />
+    <!-- Stethoscope Chest Piece -->
+    <path
+        android:fillColor="#FCD34D"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1"
+        android:pathData="M109,72m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+
+    <!-- Red Cross Emblem Badge -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,75m-14,0a14,14 0,1 1,28 0a14,14 0,1 1,-28 0" />
+    <path
+        android:fillColor="#DC2626"
+        android:pathData="M96,67h8v16h-8z M92,71h16v8h-16z" />
+    <!-- Center White Dot in Cross -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M98,73h4v4h-4z" />
+</vector>

@@ -42,6 +42,10 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.DashPathEffect
 
 data class MapHospital(
     val id: String,
@@ -350,6 +354,35 @@ fun HospitalMapScreen(
                 },
                 update = { mapView ->
                     mapView.overlays.clear()
+
+                    val originGeoPoint = GeoPoint(26.9855, 75.8513)
+
+                    // Origin Marker (PHC Amer)
+                    val originMarker = Marker(mapView).apply {
+                        position = originGeoPoint
+                        title = "PHC Amer (Origin - Supply Shortage)"
+                        snippet = "Requesting Facility • Lat: 26.9855, Lon: 75.8513"
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    }
+                    mapView.overlays.add(originMarker)
+
+                    // Draw Route Polyline from PHC Amer to selected candidate facility
+                    val targetHospital = hospitals.find { it.id == selectedHospitalId }
+                    if (targetHospital != null && (targetHospital.latitude != 26.9855 || targetHospital.longitude != 75.8513)) {
+                        val targetGeoPoint = GeoPoint(targetHospital.latitude, targetHospital.longitude)
+                        val routePolyline = Polyline(mapView).apply {
+                            outlinePaint.color = Color.parseColor("#0F766E") // Primary Teal
+                            outlinePaint.strokeWidth = 9f
+                            outlinePaint.strokeCap = Paint.Cap.ROUND
+                            outlinePaint.pathEffect = DashPathEffect(floatArrayOf(24f, 12f), 0f)
+                            addPoint(originGeoPoint)
+                            addPoint(targetGeoPoint)
+                            title = "Transit Corridor: PHC Amer ➔ ${targetHospital.name} (${targetHospital.distanceKm} km)"
+                        }
+                        mapView.overlays.add(routePolyline)
+                    }
+
+                    // Add hospital markers
                     hospitals.forEach { h ->
                         val marker = Marker(mapView)
                         marker.position = GeoPoint(h.latitude, h.longitude)
@@ -400,6 +433,47 @@ fun HospitalMapScreen(
                     contentColor = PrimaryTeal
                 ) {
                     Icon(Icons.Default.MyLocation, contentDescription = "Center on PHC Amer", modifier = Modifier.size(18.dp))
+                }
+            }
+
+            // Floating Active Route Card
+            val activeHospital = hospitals.find { it.id == selectedHospitalId }
+            if (activeHospital != null && (activeHospital.latitude != 26.9855 || activeHospital.longitude != 75.8513)) {
+                val estMinutes = Math.max(8, (activeHospital.distanceKm * 2.1).toInt())
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(10.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                    shadowElevation = 4.dp,
+                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(PrimaryTeal))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(StatusGreen, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Column {
+                            Text(
+                                text = "Corridor: PHC Amer ➔ ${activeHospital.name.take(16)}...",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextDark
+                            )
+                            Text(
+                                text = "${activeHospital.distanceKm} km • Est. Transit: ~$estMinutes min (Green Light)",
+                                fontSize = 10.sp,
+                                color = PrimaryTeal,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
             }
         }

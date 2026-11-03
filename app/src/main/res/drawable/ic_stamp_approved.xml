@@ -1,0 +1,36 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+
+    <!-- Outer Circular Border -->
+    <path
+        android:strokeColor="#046A38"
+        android:strokeWidth="2.5"
+        android:pathData="M36,36m-33,0a33,33 0,1 1,66 0a33,33 0,1 1,-66 0" />
+
+    <!-- Inner Dotted/Dashed Circle -->
+    <path
+        android:strokeColor="#046A38"
+        android:strokeWidth="1.2"
+        android:pathData="M36,36m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0" />
+
+    <!-- Center Ashoka Star / Check Emblem -->
+    <path
+        android:fillColor="#046A38"
+        android:pathData="M36,18 L39,26 L47,26 L41,31 L43,39 L36,34 L29,39 L31,31 L25,26 L33,26 Z" />
+
+    <!-- Official Stamp Text "APPROVED" Bar -->
+    <path
+        android:fillColor="#046A38"
+        android:pathData="M14,40 h44 v12 h-44 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M18,44 h36 v4 h-36 z" />
+
+    <!-- Bottom Authority Code -->
+    <path
+        android:fillColor="#046A38"
+        android:pathData="M24,56 h24 v3 h-24 z" />
+</vector>

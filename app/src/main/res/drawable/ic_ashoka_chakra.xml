@@ -1,0 +1,39 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+  <!-- Outer Wheel -->
+  <path
+      android:fillColor="#000080"
+      android:pathData="M24,4C12.95,4 4,12.95 4,24s8.95,20 20,20 20,-8.95 20,-20S35.05,4 24,4zM24,41.5C14.33,41.5 6.5,33.67 6.5,24S14.33,6.5 24,6.5 41.5,14.33 41.5,24 33.67,41.5 24,41.5z"/>
+  <!-- Central Hub -->
+  <path
+      android:fillColor="#000080"
+      android:pathData="M24,20c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4 -1.79,-4 -4,-4z"/>
+  <!-- Spokes -->
+  <path
+      android:fillColor="#000080"
+      android:pathData="M23,7h2v14h-2z"/>
+  <path
+      android:fillColor="#000080"
+      android:pathData="M23,27h2v14h-2z"/>
+  <path
+      android:fillColor="#000080"
+      android:pathData="M7,23h14v2H7z"/>
+  <path
+      android:fillColor="#000080"
+      android:pathData="M27,23h14v2H27z"/>
+  <path
+      android:fillColor="#000080"
+      android:pathData="M11.99,10.58l1.41,-1.41l9.9,9.9l-1.41,1.41z"/>
+  <path
+      android:fillColor="#000080"
+      android:pathData="M26.1,24.69l9.9,9.9l-1.41,1.41l-9.9,-9.9z"/>
+  <path
+      android:fillColor="#000080"
+      android:pathData="M34.59,11.99l1.41,1.41l-9.9,9.9l-1.41,-1.41z"/>
+  <path
+      android:fillColor="#000080"
+      android:pathData="M20.49,26.1l-9.9,9.9l-1.41,-1.41l9.9,-9.9z"/>
+</vector>

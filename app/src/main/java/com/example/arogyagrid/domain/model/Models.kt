@@ -138,7 +138,9 @@ data class AuditLogItem(
 data class AiChatResult(
     val reply: String,
     val dataSources: List<String>,
-    val grounded: Boolean
+    val grounded: Boolean,
+    val actionRoute: String? = null,
+    val actionLabel: String? = null
 )
 
 data class AuthResult(

@@ -1,0 +1,99 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="140dp"
+    android:height="100dp"
+    android:viewportWidth="140"
+    android:viewportHeight="100">
+
+    <!-- Glowing Background Aura -->
+    <path
+        android:fillColor="#15FFFFFF"
+        android:pathData="M70,50m-46,0a46,46 0,1 1,92 0a46,46 0,1 1,-92 0" />
+
+    <!-- Cold Chain Medical Refrigerator (ILR Cabinet) -->
+    <!-- Base Cabinet -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M24,24 h46 v64 h-46 z" />
+    <!-- Refrigerator Top Lid / Door Section -->
+    <path
+        android:fillColor="#CBD5E1"
+        android:pathData="M24,24 h46 v26 h-46 z" />
+    <path
+        android:fillColor="#0284C7"
+        android:pathData="M28,28 h38 v18 h-38 z" />
+    <!-- Bottom Compressor Grille -->
+    <path
+        android:fillColor="#94A3B8"
+        android:pathData="M30,76 h34 v2 h-34 z M30,80 h34 v2 h-34 z M30,84 h34 v2 h-34 z" />
+    <!-- Handle -->
+    <path
+        android:fillColor="#64748B"
+        android:pathData="M64,54 h3 v14 h-3 z" />
+
+    <!-- Digital IoT Telemetry Display on Door -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M34,32 h26 v10 h-26 z" />
+    <!-- Green Digital Temp Readout (+4.2°C) -->
+    <path
+        android:strokeColor="#10B981"
+        android:strokeWidth="1.2"
+        android:pathData="M38,37 h4 M40,35 v4 M46,35 v4 M49,35 h4 v2 h-4 v2 h4" />
+
+    <!-- Snowflake Cold Chain Icon -->
+    <path
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M102,32 v24 M90,44 h24 M93,35 l18,18 M93,53 l18,-18" />
+    <!-- Snowflake Branch Tips -->
+    <path
+        android:strokeColor="#38BDF8"
+        android:strokeWidth="1"
+        android:strokeLineCap="round"
+        android:pathData="M99,35 l3,-3 l3,3 M99,53 l3,3 l3,-3 M93,41 l-3,3 l3,3 M111,41 l3,3 l-3,3" />
+
+    <!-- Vaccine Ampoules / Vials in Foreground -->
+    <!-- Vial 1 (Blue cap - Covid/Polio) -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M84,60 h16 v28 h-16 z" />
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M87,55 h10 v5 h-10 z" />
+    <!-- Liquid Level in Vial 1 -->
+    <path
+        android:fillColor="#BAE6FD"
+        android:pathData="M85,68 h14 v18 h-14 z" />
+    <!-- Vial Label -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M85,62 h14 v6 h-14 z" />
+    <path
+        android:fillColor="#1E40AF"
+        android:pathData="M87,64 h10 v2 h-10 z" />
+
+    <!-- Vial 2 (Green cap - Rotavirus/BCG) -->
+    <path
+        android:fillColor="#F8FAFC"
+        android:pathData="M106,64 h16 v24 h-16 z" />
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M109,59 h10 v5 h-10 z" />
+    <!-- Liquid Level in Vial 2 -->
+    <path
+        android:fillColor="#A7F3D0"
+        android:pathData="M107,72 h14 v14 h-14 z" />
+    <!-- Vial Label -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M107,66 h14 v6 h-14 z" />
+    <path
+        android:fillColor="#047857"
+        android:pathData="M109,68 h10 v2 h-10 z" />
+
+    <!-- Solar Energy Leaf / Power Icon -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M48,16 L42,22 h5 l-3,8 l8,-8 h-5 z" />
+</vector>

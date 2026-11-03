@@ -21,6 +21,9 @@ interface FacilityDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertFacilities(facilities: List<FacilityEntity>)
 
+    @Query("SELECT COUNT(*) FROM facilities")
+    fun getFacilityCount(): Int
+
     @Query("DELETE FROM facilities")
     fun clearAllFacilities()
 }

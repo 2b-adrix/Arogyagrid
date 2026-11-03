@@ -21,6 +21,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.LocalShipping
+import com.example.arogyagrid.presentation.dispatch.EmergencyDispatchDialog
+import com.example.arogyagrid.presentation.dispatch.DispatchManifest
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -67,6 +70,7 @@ fun RedistributionReviewScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+    var activeDispatchManifest by remember { mutableStateOf<DispatchManifest?>(null) }
 
     Column(
         modifier = Modifier
@@ -238,27 +242,48 @@ fun RedistributionReviewScreen(
                                     enter = fadeIn(),
                                     exit = fadeOut()
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(if (isApproved) StatusGreenBg else StatusRedBg, shape = RoundedCornerShape(8.dp))
-                                            .padding(10.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = null,
-                                            tint = if (isApproved) StatusGreen else StatusRed,
-                                            modifier = Modifier.height(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = if (isApproved) "APPROVED • Decision recorded & inventory transfer queued"
-                                            else "REJECTED • Decision logged in audit history",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isApproved) StatusGreen else StatusRed
-                                        )
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(if (isApproved) StatusGreenBg else StatusRedBg, shape = RoundedCornerShape(8.dp))
+                                                .padding(10.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = if (isApproved) StatusGreen else StatusRed,
+                                                modifier = Modifier.height(18.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = if (isApproved) "APPROVED • Decision recorded & transfer queued"
+                                                else "REJECTED • Decision logged in audit history",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (isApproved) StatusGreen else StatusRed
+                                            )
+                                        }
+
+                                        if (isApproved) {
+                                            OutlinedButton(
+                                                onClick = {
+                                                    activeDispatchManifest = DispatchManifest(
+                                                        passNumber = "RJ-MED-TR-${item.recommendationId.takeLast(6).uppercase()}",
+                                                        sourceHospital = item.sourceFacilityName,
+                                                        destinationHospital = item.targetFacilityName,
+                                                        items = listOf("${item.transferQuantity}x ${item.medicineName}")
+                                                    )
+                                                },
+                                                shape = RoundedCornerShape(8.dp),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.height(14.dp))
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text("Generate Emergency Gate Pass", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -266,6 +291,17 @@ fun RedistributionReviewScreen(
                     }
                 }
             }
+        }
+
+        // Emergency Gate Pass Dialog
+        activeDispatchManifest?.let { manifest ->
+            EmergencyDispatchDialog(
+                manifest = manifest,
+                onDismiss = { activeDispatchManifest = null },
+                onConfirmDispatch = {
+                    activeDispatchManifest = null
+                }
+            )
         }
     }
 }

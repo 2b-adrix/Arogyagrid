@@ -1,0 +1,65 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="140dp"
+    android:height="100dp"
+    android:viewportWidth="140"
+    android:viewportHeight="100">
+
+    <!-- Background Glow Aura -->
+    <path
+        android:fillColor="#15FFFFFF"
+        android:pathData="M70,50m-46,0a46,46 0,1 1,92 0a46,46 0,1 1,-92 0" />
+
+    <!-- Warehouse Structure -->
+    <path
+        android:fillColor="#1E3A8A"
+        android:pathData="M15,40 L70,18 L125,40 L125,88 L15,88 Z" />
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M20,44 L70,24 L120,44 L120,84 L20,84 Z" />
+
+    <!-- Warehouse Roller Shutter / Gate -->
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M48,52 h44 v32 h-44 z" />
+    <path
+        android:fillColor="#334155"
+        android:pathData="M52,56 h36 v2 h-36 z M52,62 h36 v2 h-36 z M52,68 h36 v2 h-36 z M52,74 h36 v2 h-36 z" />
+
+    <!-- Medicine Supply Crates (Wooden / Poly Pallet) -->
+    <path
+        android:fillColor="#D97706"
+        android:pathData="M25,62 h18 v20 h-18 z" />
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M27,64 h14 v16 h-14 z" />
+    <!-- Red Cross on Crate -->
+    <path
+        android:fillColor="#DC2626"
+        android:pathData="M32,69 h4 v6 h-4 z M30,71 h8 v2 h-8 z" />
+
+    <!-- Stacked Crate 2 -->
+    <path
+        android:fillColor="#059669"
+        android:pathData="M98,60 h18 v22 h-18 z" />
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M100,62 h14 v18 h-14 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M104,68 h6 v6 h-6 z" />
+
+    <!-- Barcode / QR Label on Crate 2 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M103,76 h8 v2 h-8 z" />
+
+    <!-- Digital Logistics Sync Beacon (Top of Roof) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M70,14m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+    <path
+        android:strokeColor="#FDE68A"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M64,11 C67,8 73,8 76,11 M61,8 C66,3 74,3 79,8" />
+</vector>
