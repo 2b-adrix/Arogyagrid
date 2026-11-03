@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,9 +29,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,12 +57,20 @@ import com.example.arogyagrid.presentation.components.RiskBadge
 import com.example.arogyagrid.presentation.components.SyntheticDataBanner
 import com.example.arogyagrid.presentation.theme.AccentBlue
 import com.example.arogyagrid.presentation.theme.AccentBlueLight
+import com.example.arogyagrid.presentation.theme.GovtNavy
+import com.example.arogyagrid.presentation.theme.GovtNavyLight
 import com.example.arogyagrid.presentation.theme.PrimaryTeal
 import com.example.arogyagrid.presentation.theme.SlateBorder
 import com.example.arogyagrid.presentation.theme.SlateCardVariant
+import com.example.arogyagrid.presentation.theme.StatusOrange
+import com.example.arogyagrid.presentation.theme.StatusOrangeBg
 import com.example.arogyagrid.presentation.theme.StatusRed
+import com.example.arogyagrid.presentation.theme.StatusRedBg
 import com.example.arogyagrid.presentation.theme.TextDark
 import com.example.arogyagrid.presentation.theme.TextMuted
+import com.example.arogyagrid.presentation.theme.TirangaGreen
+import com.example.arogyagrid.presentation.theme.TirangaGreenLight
+import com.example.arogyagrid.presentation.theme.TirangaSaffron
 import com.example.arogyagrid.presentation.viewmodel.RiskViewModel
 
 @Composable
@@ -87,55 +98,81 @@ fun MedicineRiskScreen(
             onSyncClick = { viewModel.loadRisks() }
         )
 
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
+            // Official Section Header
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_risk_shield),
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(Color.White)
+                        .border(1.dp, SlateBorder, RoundedCornerShape(4.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_emblem_lion),
+                        contentDescription = "Emblem",
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "Medicine Risk Intelligence",
-                        fontSize = 22.sp,
+                        text = "औषधि स्टॉकआउट जोखिम मैट्रिक्स • DEFICIT MATRIX",
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextDark
+                        color = GovtNavy
                     )
                     Text(
-                        text = "Stock coverage, 7-day demand predictions & stock-out probability",
-                        fontSize = 12.sp,
+                        text = "आरएमएससीएल आवश्यक औषधि सूची (EDL) स्टॉकआउट प्रायिकता एवं अग्रिम आपूर्ति चेतावनी",
+                        fontSize = 11.sp,
                         color = TextMuted
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Filter Chips
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Filter Chips (Government Portal Style)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 items(filters) { filter ->
+                    val filterLabel = when (filter) {
+                        "CRITICAL" -> "गंभीर संकट (Critical)"
+                        "HIGH" -> "उच्च जोखिम (High)"
+                        "MEDIUM" -> "मध्यम (Medium)"
+                        "LOW" -> "सामान्य (Low)"
+                        else -> "समस्त (All)"
+                    }
                     FilterChip(
                         selected = selectedFilter == filter,
                         onClick = { selectedFilter = filter },
-                        label = { Text(filter, fontSize = 11.sp, fontWeight = FontWeight.Bold) }
+                        shape = RoundedCornerShape(4.dp),
+                        label = { Text(filterLabel, fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = if (filter == "CRITICAL") StatusRed else GovtNavy,
+                            selectedLabelColor = Color.White
+                        )
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = PrimaryTeal)
+                    CircularProgressIndicator(color = GovtNavy)
                 }
             } else if (uiState.error != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = uiState.error ?: "Error loading risk data", color = StatusRed, fontSize = 14.sp)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = { viewModel.loadRisks() }) {
-                            Text("Retry")
+                        Button(
+                            onClick = { viewModel.loadRisks() },
+                            shape = RoundedCornerShape(4.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = GovtNavy)
+                        ) {
+                            Text("पुनः प्रयास करें (Retry)")
                         }
                     }
                 }
@@ -146,7 +183,7 @@ fun MedicineRiskScreen(
                 }
 
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(risks, key = { it.id }) { risk ->
@@ -165,24 +202,40 @@ fun MedicineRiskScreen(
 
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
-                            elevation = CardDefaults.cardElevation(2.dp),
-                            shape = RoundedCornerShape(14.dp),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(if (isCritical) StatusRed else SlateBorder)),
+                            elevation = CardDefaults.cardElevation(1.dp),
+                            shape = RoundedCornerShape(4.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(modifier = Modifier.padding(12.dp)) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = risk.medicineName,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextDark
-                                        )
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Surface(
+                                                shape = RoundedCornerShape(2.dp),
+                                                color = GovtNavyLight
+                                            ) {
+                                                Text(
+                                                    text = "EDL-${(risk.medicineName.hashCode() % 899 + 100).let { if (it < 0) -it else it }}",
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = GovtNavy,
+                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = risk.medicineName,
+                                                fontSize = 14.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = GovtNavy
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = risk.facilityName,
                                             fontSize = 11.sp,
@@ -192,56 +245,89 @@ fun MedicineRiskScreen(
                                     RiskBadge(riskLevel = risk.severity)
                                 }
 
-                                Spacer(modifier = Modifier.height(12.dp))
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Days to Stockout: ${risk.daysToStockout}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextDark)
-                                    Text("Risk Score: ${risk.riskScore}", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = if (isCritical) StatusRed else PrimaryTeal)
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Text("Current: ${risk.currentStock} | Required: ${risk.requiredStock} | Deficit: ${risk.deficit}", fontSize = 11.sp, color = TextMuted)
-                                }
-
                                 Spacer(modifier = Modifier.height(8.dp))
+
+                                Surface(
+                                    shape = RoundedCornerShape(3.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, SlateBorder),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column {
+                                            Text("स्टॉक समाप्ति शेष", fontSize = 9.sp, color = TextMuted)
+                                            Text("${risk.daysToStockout} दिन", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = if (isCritical) StatusRed else TextDark)
+                                        }
+                                        Column {
+                                            Text("जोखिम सूचकांक", fontSize = 9.sp, color = TextMuted)
+                                            Text("${risk.riskScore}", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = if (isCritical) StatusRed else GovtNavy)
+                                        }
+                                        Column(horizontalAlignment = Alignment.End) {
+                                            Text("स्टॉक घाटा (Deficit)", fontSize = 9.sp, color = TextMuted)
+                                            Text("${risk.deficit} यूनिट", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = if (isCritical) StatusRed else StatusOrange)
+                                        }
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "वर्तमान स्टॉक: ${risk.currentStock} | आवश्यक मानक: ${risk.requiredStock}",
+                                        fontSize = 10.5.sp,
+                                        color = TextMuted
+                                    )
+                                    Text(
+                                        text = "स्टॉकआउट प्रायिकता: ${(animatedProb * 100).toInt()}%",
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (isCritical) StatusRed else GovtNavy
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(6.dp))
                                 LinearProgressIndicator(
                                     progress = { animatedProb },
-                                    color = if (isCritical) StatusRed else PrimaryTeal,
+                                    color = if (isCritical) StatusRed else if (isHigh) StatusOrange else TirangaGreen,
                                     trackColor = SlateCardVariant,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(6.dp)
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp))
                                 )
 
                                 if (!risk.recommendation.isNullOrEmpty()) {
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .background(AccentBlueLight)
-                                            .padding(10.dp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(3.dp),
+                                        color = GovtNavyLight.copy(alpha = 0.6f),
+                                        border = androidx.compose.foundation.BorderStroke(0.5.dp, GovtNavy.copy(alpha = 0.2f)),
+                                        modifier = Modifier.fillMaxWidth()
                                     ) {
-                                        Row(verticalAlignment = Alignment.Top) {
+                                        Row(
+                                            modifier = Modifier.padding(8.dp),
+                                            verticalAlignment = Alignment.Top
+                                        ) {
                                             Icon(
                                                 imageVector = Icons.Default.AutoAwesome,
-                                                contentDescription = "AI Recommendation",
-                                                tint = AccentBlue,
-                                                modifier = Modifier.size(16.dp)
+                                                contentDescription = "Advisory",
+                                                tint = GovtNavy,
+                                                modifier = Modifier.size(14.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
                                             Column {
-                                                Text("Recommendation", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = AccentBlue)
+                                                Text("आरएमएससीएल क्लिनिकल निर्देश / CMHO परामर्श:", fontSize = 9.5.sp, fontWeight = FontWeight.Bold, color = GovtNavy)
                                                 Text(
                                                     text = risk.recommendation ?: "",
-                                                    fontSize = 11.sp,
-                                                    color = Color.DarkGray
+                                                    fontSize = 10.5.sp,
+                                                    color = TextDark
                                                 )
                                             }
                                         }

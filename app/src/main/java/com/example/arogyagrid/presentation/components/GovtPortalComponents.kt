@@ -209,7 +209,7 @@ fun GovtCampaignCarousel(
                                 text = slide.actionText,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GovtNavy
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -236,14 +236,15 @@ fun GovtServicesGrid(
     onNavigateToScreen: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
-    val services = remember {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val services = remember(primaryColor) {
         listOf(
-            GovtServiceTile("औषधि भंडार", "e-Aushadhi", Icons.Default.Inventory, GovtNavyLight, GovtNavy, "inventory"),
+            GovtServiceTile("औषधि भंडार", "e-Aushadhi", Icons.Default.Inventory, GovtNavyLight, primaryColor, "inventory"),
             GovtServiceTile("कोल्ड चेन", "eVIN Monitor", Icons.Default.AcUnit, Color(0xFFE0F2FE), Color(0xFF0369A1), "cold_chain"),
             GovtServiceTile("महामारी सतर्कता", "IDSP Portal", Icons.Default.Coronavirus, StatusRedBg, StatusRed, "outbreak_surveillance"),
             GovtServiceTile("शय्या व आईसीयू", "HMIS Census", Icons.Default.LocalHospital, TirangaSaffronLight, TirangaSaffron, "beds_staff"),
             GovtServiceTile("ग्रीन कॉरिडोर", "Transit Pass", Icons.Default.LocalShipping, TirangaGreenLight, TirangaGreen, "hospital_map"),
-            GovtServiceTile("निर्णय सहायता", "CDSS AI", Icons.Default.Healing, GovtNavyLight, GovtNavy, "ai_assistant"),
+            GovtServiceTile("निर्णय सहायता", "CDSS AI", Icons.Default.Healing, GovtNavyLight, primaryColor, "ai_assistant"),
             GovtServiceTile("पुनर्वितरण", "RMSCL Requisition", Icons.Default.SwapHoriz, StatusOrangeBg, StatusOrange, "redistribution"),
             GovtServiceTile("हेल्पलाइन 104", "Toll-Free Tele", Icons.Default.PhoneInTalk, StatusRedBg, StatusRed, "tel:104")
         )
@@ -260,14 +261,14 @@ fun GovtServicesGrid(
                     modifier = Modifier
                         .size(6.dp)
                         .clip(CircleShape)
-                        .background(GovtNavy)
+                        .background(MaterialTheme.colorScheme.primary)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = "डिजिटल स्वास्थ्य सेवाएं • OFFICIAL SERVICE PORTALS",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GovtNavy,
+                    color = MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 0.5.sp
                 )
             }
@@ -275,7 +276,7 @@ fun GovtServicesGrid(
             Text(
                 text = "सभी सेवाएं (8) →",
                 fontSize = 10.sp,
-                color = TextMuted,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -295,7 +296,7 @@ fun GovtServicesGrid(
                         Card(
                             shape = RoundedCornerShape(4.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = BorderStroke(1.dp, SlateBorder),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                             elevation = CardDefaults.cardElevation(1.dp),
                             modifier = Modifier
                                 .weight(1f)
@@ -415,7 +416,7 @@ fun GovtGazetteCirculars() {
                         text = "नवीनतम परिपत्र एवं शासनादेश (Official Gazette)",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GovtNavy
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -459,30 +460,30 @@ fun GovtGazetteCirculars() {
                                 text = cir.orderNo,
                                 fontSize = 9.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = GovtNavy
+                                color = MaterialTheme.colorScheme.primary
                             )
                             Text(
                                 text = cir.date,
                                 fontSize = 8.5.sp,
-                                color = TextMuted
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
                             text = cir.subject,
                             fontSize = 10.5.sp,
-                            color = TextDark,
+                            color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 14.sp
                         )
                         Text(
                             text = "हस्ताक्षरकर्ता: ${cir.authority}",
                             fontSize = 8.5.sp,
-                            color = TextMuted
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 if (idx < circulars.size - 1) {
                     HorizontalDivider(
-                        color = SlateBorder.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                         thickness = 0.5.dp,
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
@@ -559,8 +560,8 @@ fun GovtPortalFooter() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFE2E8F0).copy(alpha = 0.5f))
-            .border(BorderStroke(0.5.dp, SlateBorder))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .border(BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline))
             .padding(14.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -587,39 +588,39 @@ fun GovtPortalFooter() {
             text = "राष्ट्रीय स्वास्थ्य मिशन • NATIONAL HEALTH MISSION",
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            color = GovtNavy,
+            color = MaterialTheme.colorScheme.primary,
             letterSpacing = 0.4.sp
         )
 
         Text(
             text = "चिकित्सा, स्वास्थ्य एवं परिवार कल्याण विभाग • राजस्थान सरकार",
             fontSize = 9.sp,
-            color = TextDark
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        HorizontalDivider(color = SlateBorder, thickness = 0.5.dp, modifier = Modifier.width(160.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp, modifier = Modifier.width(160.dp))
 
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
             text = "Designed, Developed & Maintained by National Informatics Centre (NIC)",
             fontSize = 8.sp,
-            color = TextMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         Text(
             text = "Ministry of Electronics & Information Technology • Government of India",
             fontSize = 7.5.sp,
-            color = TextMuted,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         Text(
             text = "पोर्टल संस्करण: v3.4.1 (Rajasthan Health Cloud Instance) • सत्यमेव जयते",
             fontSize = 7.5.sp,
             fontWeight = FontWeight.Medium,
-            color = GovtNavy,
+            color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center
         )
     }

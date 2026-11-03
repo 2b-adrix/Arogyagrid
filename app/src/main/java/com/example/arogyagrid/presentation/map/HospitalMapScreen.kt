@@ -2,9 +2,14 @@ package com.example.arogyagrid.presentation.map
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.DashPathEffect
+import android.graphics.Paint
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,24 +17,27 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Directions
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material.icons.filled.LocalHospital
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.arogyagrid.core.AppLanguage
+import com.example.arogyagrid.core.AppThemeMode
+import com.example.arogyagrid.core.LanguageManager
+import com.example.arogyagrid.core.ThemeManager
+import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.data.remote.NetworkClient
 import com.example.arogyagrid.presentation.theme.*
 import kotlinx.coroutines.Dispatchers
@@ -43,9 +51,6 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.DashPathEffect
 
 data class MapHospital(
     val id: String,
@@ -62,16 +67,32 @@ data class MapHospital(
 
 data class MedicineOption(
     val id: String,
-    val name: String
+    val nameHi: String,
+    val nameEn: String
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
+enum class MapScreenMode {
+    SPLIT,      // Top balanced map (210dp) + Full facility cards list
+    FULL_MAP,   // Maximize map view with floating bottom card
+    LIST_ONLY   // Maximize list view with compact top route strip
+}
+
 @Composable
 fun HospitalMapScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onLogout: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    val currentLang by LanguageManager.currentLanguage.collectAsState()
+    val themeMode by ThemeManager.themeMode.collectAsState()
+    val isDark = when (themeMode) {
+        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+    }
 
     // Configure Osmdroid User-Agent to avoid OSM tile server rate-limiting
     remember {
@@ -82,7 +103,7 @@ fun HospitalMapScreen(
         true
     }
 
-    // 1. Humanitarian OpenStreetMap (HOT) - 100% Free, NO API Key Required
+    // 1. Humanitarian OpenStreetMap (HOT)
     val osmHotTileSource = remember {
         XYTileSource(
             "OpenStreetMapHOT",
@@ -97,7 +118,7 @@ fun HospitalMapScreen(
         )
     }
 
-    // 2. Official OpenStreetMap Standard Tiles - 100% Free, NO API Key Required
+    // 2. Official OpenStreetMap Standard Tiles
     val osmStandardTileSource = remember {
         XYTileSource(
             "OpenStreetMapStandard",
@@ -108,7 +129,7 @@ fun HospitalMapScreen(
         )
     }
 
-    // 3. OpenTopoMap - 100% Free OpenStreetMap with terrain & elevation contours, NO API Key Required
+    // 3. OpenTopoMap
     val osmTopoTileSource = remember {
         XYTileSource(
             "OpenTopoMap",
@@ -127,21 +148,29 @@ fun HospitalMapScreen(
     var selectedHospitalId by remember { mutableStateOf<String?>("FAC-JPR-001") }
     var mapViewInstance by remember { mutableStateOf<MapView?>(null) }
 
+    // Screen Layout Mode: SPLIT (default), FULL_MAP, or LIST_ONLY
+    var screenMode by remember { mutableStateOf(MapScreenMode.SPLIT) }
+
+    // Top Settings Menu Expanded state
+    var settingsMenuExpanded by remember { mutableStateOf(false) }
+    // Layer selector popup expanded state
+    var layerMenuExpanded by remember { mutableStateOf(false) }
+
     // Live Database State
     var hospitals by remember { mutableStateOf<List<MapHospital>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Medicine filter list for Haversine Geo-Proximity Routing
+    // Medicine filter list with bilingual names
     val medicineOptions = remember {
         listOf(
-            MedicineOption("ALL", "All Registered Facilities"),
-            MedicineOption("MED-202", "ORS Sachets (Emergency)"),
-            MedicineOption("MED-101", "Amoxicillin 500mg"),
-            MedicineOption("MED-201", "Oxygen Cylinder (D-Type)"),
-            MedicineOption("MED-104", "Ceftriaxone 1g Inj"),
-            MedicineOption("MED-301", "Metformin 500mg"),
-            MedicineOption("MED-401", "Paracetamol Syrup 125mg")
+            MedicineOption("ALL", "समस्त पंजीकृत संस्थान", "All Registered Facilities"),
+            MedicineOption("MED-202", "ओआरएस पैकेट्स (आपातकालीन)", "ORS Sachets (Emergency)"),
+            MedicineOption("MED-101", "एमोक्सिसिलिन 500mg", "Amoxicillin 500mg"),
+            MedicineOption("MED-201", "ऑक्सीजन सिलेंडर (D-Type)", "Oxygen Cylinder (D-Type)"),
+            MedicineOption("MED-104", "सेप्ट्रियाक्सोन 1g इंजेक्शन", "Ceftriaxone 1g Inj"),
+            MedicineOption("MED-301", "मेटफॉर्मिन 500mg", "Metformin 500mg"),
+            MedicineOption("MED-401", "पैरासिटामोल सिरप 125mg", "Paracetamol Syrup 125mg")
         )
     }
     var selectedMedicineIndex by remember { mutableIntStateOf(0) }
@@ -157,11 +186,9 @@ fun HospitalMapScreen(
         coroutineScope.launch {
             try {
                 if (medId == "ALL") {
-                    // Fetch all facilities live from Spring Boot backend
                     val res = withContext(Dispatchers.IO) { NetworkClient.apiService.getFacilities("Jaipur") }
                     if (res.isSuccessful && res.body()?.data != null) {
                         val facList = res.body()!!.data!!
-                        // Calculate Haversine distance from origin (PHC Amer)
                         val originLat = 26.9855
                         val originLon = 75.8513
                         hospitals = facList.map { f ->
@@ -175,7 +202,11 @@ fun HospitalMapScreen(
                                 latitude = lat,
                                 longitude = lon,
                                 distanceKm = Math.round(dist * 10.0) / 10.0,
-                                status = if (f.facilityId == "FAC-JPR-001" || f.facilityId == "FAC-JPR-005") "Surplus Stock Hub" else "Active Facility",
+                                status = if (f.facilityId == "FAC-JPR-001" || f.facilityId == "FAC-JPR-005") {
+                                    if (currentLang == AppLanguage.HINDI) "अधिशेष स्टॉक केंद्र" else "Surplus Stock Hub"
+                                } else {
+                                    if (currentLang == AppLanguage.HINDI) "सक्रिय संस्थान" else "Active Facility"
+                                },
                                 isCritical = f.facilityId == "FAC-JPR-011" || f.facilityId == "FAC-JPR-006",
                                 contactPhone = f.contactPhone
                             )
@@ -184,7 +215,6 @@ fun HospitalMapScreen(
                         errorMessage = "Backend connection failed. Status: ${res.code()}"
                     }
                 } else {
-                    // Fetch real-time nearest surplus facilities for this exact medicine
                     val res = withContext(Dispatchers.IO) {
                         NetworkClient.apiService.getNearestSurplus(originFacilityId, medId)
                     }
@@ -194,11 +224,11 @@ fun HospitalMapScreen(
                             MapHospital(
                                 id = n.facilityId,
                                 name = n.facilityName,
-                                type = "Candidate Surplus Hub",
+                                type = if (currentLang == AppLanguage.HINDI) "आपातकालीन आपूर्ति केंद्र" else "Candidate Surplus Hub",
                                 latitude = n.latitude,
                                 longitude = n.longitude,
                                 distanceKm = n.distanceKm,
-                                status = "${n.availableStock} Units Available",
+                                status = "${n.availableStock} ${if (currentLang == AppLanguage.HINDI) "यूनिट उपलब्ध" else "Units Available"}",
                                 isCritical = false,
                                 availableStock = n.availableStock,
                                 contactPhone = n.contactPhone
@@ -216,7 +246,7 @@ fun HospitalMapScreen(
         }
     }
 
-    LaunchedEffect(selectedMedicineIndex) {
+    LaunchedEffect(selectedMedicineIndex, currentLang) {
         val selectedMed = medicineOptions[selectedMedicineIndex]
         fetchLiveHospitals(selectedMed.id)
     }
@@ -227,11 +257,35 @@ fun HospitalMapScreen(
         }
     }
 
+    fun animateMapToFacility(targetLat: Double, targetLon: Double, zoom: Double = 13.5) {
+        mapViewInstance?.let { mv ->
+            mv.post {
+                mv.controller.animateTo(GeoPoint(targetLat, targetLon))
+                mv.controller.setZoom(zoom)
+            }
+        }
+    }
+
+    val activeHospital = hospitals.find { it.id == selectedHospitalId }
+    val estMinutes = activeHospital?.let { Math.max(8, (it.distanceKm * 2.1).toInt()) } ?: 22
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
+        // ── 1. Official National Tricolor Ribbon (Tiranga) ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(TirangaSaffron))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(androidx.compose.ui.graphics.Color.White))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(TirangaGreen))
+        }
+
+        // ── 2. Clean, Organized Header (Unified, No Duplicate Logos) ──
         Surface(
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 2.dp,
@@ -241,71 +295,324 @@ fun HospitalMapScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextDark)
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Jaipur Supply Routing", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = TextDark)
-                        Text(
-                            text = if (isLoading) "Syncing with Cloud Neon DB..." else "Origin: PHC Amer • ${hospitals.size} Facilities Live",
-                            fontSize = 11.sp,
-                            color = PrimaryTeal
+                    IconButton(
+                        onClick = onNavigateBack,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    FilterChip(
-                        selected = true,
-                        onClick = {
-                            selectedTileSourceIndex = (selectedTileSourceIndex + 1) % 3
-                            val targetSource = when (selectedTileSourceIndex) {
-                                0 -> osmHotTileSource
-                                1 -> osmStandardTileSource
-                                else -> osmTopoTileSource
-                            }
-                            mapViewInstance?.let { mv ->
-                                mv.setTileSource(targetSource)
-                                mv.invalidate()
-                            }
-                        },
-                        leadingIcon = {
-                            Icon(Icons.Default.Layers, contentDescription = null, modifier = Modifier.size(14.dp))
-                        },
-                        label = {
-                            Text(
-                                when (selectedTileSourceIndex) {
-                                    0 -> "HOT"
-                                    1 -> "Standard"
-                                    else -> "Topo"
-                                },
-                                fontSize = 10.sp
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = LanguageManager.s("राजस्थान सरकार • स्वास्थ्य विभाग", "GOVT. OF RAJASTHAN • HEALTH DEPT"),
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TirangaSaffron,
+                            letterSpacing = 0.5.sp
+                        )
+                        Text(
+                            text = LanguageManager.s("आपातकालीन औषधि ग्रीन कॉरिडोर", "Emergency Medicine Green Corridor"),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    // Map Layer Switcher
+                    Box {
+                        IconButton(
+                            onClick = { layerMenuExpanded = true },
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Layers,
+                                contentDescription = "Map Layers",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
-                    )
+
+                        DropdownMenu(
+                            expanded = layerMenuExpanded,
+                            onDismissRequest = { layerMenuExpanded = false }
+                        ) {
+                            listOf("HOT नक्शा (Humanitarian)", "Standard OSM", "Topo नक्शा (Elevation)").forEachIndexed { index, name ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                name,
+                                                color = if (selectedTileSourceIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                fontWeight = if (selectedTileSourceIndex == index) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                            if (selectedTileSourceIndex == index) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedTileSourceIndex = index
+                                        val targetSource = when (index) {
+                                            0 -> osmHotTileSource
+                                            1 -> osmStandardTileSource
+                                            else -> osmTopoTileSource
+                                        }
+                                        mapViewInstance?.let { mv ->
+                                            mv.setTileSource(targetSource)
+                                            mv.invalidate()
+                                        }
+                                        layerMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Settings & Language Menu Dropdown (3-Dots)
+                    Box {
+                        IconButton(
+                            onClick = { settingsMenuExpanded = true },
+                            modifier = Modifier.size(34.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = settingsMenuExpanded,
+                            onDismissRequest = { settingsMenuExpanded = false }
+                        ) {
+                            // ── Language Selection ──
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            "हिन्दी (Hindi)",
+                                            color = if (currentLang == AppLanguage.HINDI) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                            fontWeight = if (currentLang == AppLanguage.HINDI) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                        if (currentLang == AppLanguage.HINDI) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                },
+                                leadingIcon = { Icon(Icons.Default.Translate, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                onClick = {
+                                    LanguageManager.setLanguage(AppLanguage.HINDI)
+                                    settingsMenuExpanded = false
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            "English",
+                                            color = if (currentLang == AppLanguage.ENGLISH) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                            fontWeight = if (currentLang == AppLanguage.ENGLISH) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                        if (currentLang == AppLanguage.ENGLISH) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                },
+                                leadingIcon = { Icon(Icons.Default.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                onClick = {
+                                    LanguageManager.setLanguage(AppLanguage.ENGLISH)
+                                    settingsMenuExpanded = false
+                                }
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            // ── Theme Selection ──
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            if (currentLang == AppLanguage.HINDI) "सिस्टम थीम (System)" else "System Theme",
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (themeMode == AppThemeMode.SYSTEM) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                },
+                                leadingIcon = { Icon(Icons.Default.SettingsBrightness, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                onClick = {
+                                    ThemeManager.setThemeMode(AppThemeMode.SYSTEM)
+                                    settingsMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            if (currentLang == AppLanguage.HINDI) "लाइट मोड (Light)" else "Light Mode",
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (themeMode == AppThemeMode.LIGHT) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                },
+                                leadingIcon = { Icon(Icons.Default.LightMode, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                onClick = {
+                                    ThemeManager.setThemeMode(AppThemeMode.LIGHT)
+                                    settingsMenuExpanded = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            if (currentLang == AppLanguage.HINDI) "डार्क मोड (Dark)" else "Dark Mode",
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (themeMode == AppThemeMode.DARK) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                },
+                                leadingIcon = { Icon(Icons.Default.DarkMode, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                                onClick = {
+                                    ThemeManager.setThemeMode(AppThemeMode.DARK)
+                                    settingsMenuExpanded = false
+                                }
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            // ── Account / Login / Logout ──
+                            if (UserSession.isLoggedIn) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (currentLang == AppLanguage.HINDI) "लॉगआउट (${UserSession.userName ?: "उपयोगकर्ता"})" else "Logout (${UserSession.userName ?: "User"})",
+                                            color = StatusRed,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = StatusRed) },
+                                    onClick = {
+                                        settingsMenuExpanded = false
+                                        UserSession.logout()
+                                        onLogout()
+                                    }
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            if (currentLang == AppLanguage.HINDI) "लॉगिन करें (Sign In)" else "Sign In (Login)",
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    },
+                                    leadingIcon = { Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                    onClick = {
+                                        settingsMenuExpanded = false
+                                        onNavigateToLogin()
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
 
-                // Filter Selector for Supply Item / Medicine
+                // ── 3. High-Contrast Official Emergency Corridor Alert Strip ──
+                // Compact single-line official dispatch strip that never clashes in dark or light mode
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(3.dp),
+                            color = if (isDark) StatusOrange.copy(alpha = 0.3f) else StatusOrangeBg,
+                            border = androidx.compose.foundation.BorderStroke(0.5.dp, StatusOrange)
+                        ) {
+                            Text(
+                                text = "GC-82 • CMHO",
+                                fontSize = 8.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) androidx.compose.ui.graphics.Color(0xFFFDBA74) else StatusOrange,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = LanguageManager.s("SMS ➔ पीएचसी आमेर आपातकालीन रूट • 500 ORS • ~22 मिनट एक्सप्रेस क्लीयरेंस", "SMS ➔ PHC Amer Emergency Route • 500 ORS • ~22 min Express Transit"),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                // ── 4. Unified Filter & View Mode Control Toolbar ──
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Medicine Selector Dropdown
                     Box(modifier = Modifier.weight(1f)) {
                         OutlinedButton(
                             onClick = { medicineDropdownExpanded = true },
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            shape = RoundedCornerShape(6.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().height(36.dp)
                         ) {
-                            Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp), tint = PrimaryTeal)
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                Icons.Default.FilterList,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            val curMed = medicineOptions[selectedMedicineIndex]
                             Text(
-                                text = "Item: ${medicineOptions[selectedMedicineIndex].name}",
-                                fontSize = 12.sp,
+                                text = if (currentLang == AppLanguage.HINDI) curMed.nameHi else curMed.nameEn,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                maxLines = 1
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
 
@@ -315,7 +622,14 @@ fun HospitalMapScreen(
                         ) {
                             medicineOptions.forEachIndexed { index, option ->
                                 DropdownMenuItem(
-                                    text = { Text(option.name, fontSize = 13.sp) },
+                                    text = {
+                                        Text(
+                                            if (currentLang == AppLanguage.HINDI) option.nameHi else option.nameEn,
+                                            fontSize = 12.sp,
+                                            color = if (selectedMedicineIndex == index) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                            fontWeight = if (selectedMedicineIndex == index) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
                                     onClick = {
                                         selectedMedicineIndex = index
                                         medicineDropdownExpanded = false
@@ -325,304 +639,678 @@ fun HospitalMapScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = { fetchLiveHospitals(medicineOptions[selectedMedicineIndex].id) }
-                    ) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = PrimaryTeal)
-                    }
-                }
-            }
-        }
+                    Spacer(modifier = Modifier.width(6.dp))
 
-        Box(modifier = Modifier.fillMaxWidth().height(320.dp)) {
-            AndroidView(
-                factory = { ctx ->
-                    val initialSource = when (selectedTileSourceIndex) {
-                        0 -> osmHotTileSource
-                        1 -> osmStandardTileSource
-                        else -> osmTopoTileSource
-                    }
-                    val tileProvider = MapTileProviderBasic(ctx.applicationContext, initialSource)
-                    MapView(ctx, tileProvider).apply {
-                        setMultiTouchControls(true)
-                        controller.setZoom(12.0)
-                        controller.setCenter(GeoPoint(26.9855, 75.8513)) // Centered at PHC Amer
-                        mapViewInstance = this
-                        onResume()
-                    }
-                },
-                update = { mapView ->
-                    mapView.overlays.clear()
-
-                    val originGeoPoint = GeoPoint(26.9855, 75.8513)
-
-                    // Origin Marker (PHC Amer)
-                    val originMarker = Marker(mapView).apply {
-                        position = originGeoPoint
-                        title = "PHC Amer (Origin - Supply Shortage)"
-                        snippet = "Requesting Facility • Lat: 26.9855, Lon: 75.8513"
-                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                    }
-                    mapView.overlays.add(originMarker)
-
-                    // Draw Route Polyline from PHC Amer to selected candidate facility
-                    val targetHospital = hospitals.find { it.id == selectedHospitalId }
-                    if (targetHospital != null && (targetHospital.latitude != 26.9855 || targetHospital.longitude != 75.8513)) {
-                        val targetGeoPoint = GeoPoint(targetHospital.latitude, targetHospital.longitude)
-                        val routePolyline = Polyline(mapView).apply {
-                            outlinePaint.color = Color.parseColor("#0F766E") // Primary Teal
-                            outlinePaint.strokeWidth = 9f
-                            outlinePaint.strokeCap = Paint.Cap.ROUND
-                            outlinePaint.pathEffect = DashPathEffect(floatArrayOf(24f, 12f), 0f)
-                            addPoint(originGeoPoint)
-                            addPoint(targetGeoPoint)
-                            title = "Transit Corridor: PHC Amer ➔ ${targetHospital.name} (${targetHospital.distanceKm} km)"
-                        }
-                        mapView.overlays.add(routePolyline)
-                    }
-
-                    // Add hospital markers
-                    hospitals.forEach { h ->
-                        val marker = Marker(mapView)
-                        marker.position = GeoPoint(h.latitude, h.longitude)
-                        marker.title = h.name
-                        marker.snippet = "${h.type} • ${h.status} • ${h.distanceKm} km"
-                        marker.setOnMarkerClickListener { m, _ ->
-                            selectedHospitalId = h.id
-                            m.showInfoWindow()
-                            true
-                        }
-                        mapView.overlays.add(marker)
-                    }
-                    mapView.invalidate()
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-
-            // Map Quick Controls: Zoom In, Zoom Out, Center Origin Hospital (PHC Amer)
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                SmallFloatingActionButton(
-                    onClick = { mapViewInstance?.controller?.zoomIn() },
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = PrimaryTeal
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Zoom In", modifier = Modifier.size(18.dp))
-                }
-                SmallFloatingActionButton(
-                    onClick = { mapViewInstance?.controller?.zoomOut() },
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = PrimaryTeal
-                ) {
-                    Icon(Icons.Default.Remove, contentDescription = "Zoom Out", modifier = Modifier.size(18.dp))
-                }
-                SmallFloatingActionButton(
-                    onClick = {
-                        mapViewInstance?.controller?.animateTo(GeoPoint(26.9855, 75.8513))
-                        mapViewInstance?.controller?.setZoom(13.0)
-                    },
-                    shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = PrimaryTeal
-                ) {
-                    Icon(Icons.Default.MyLocation, contentDescription = "Center on PHC Amer", modifier = Modifier.size(18.dp))
-                }
-            }
-
-            // Floating Active Route Card
-            val activeHospital = hospitals.find { it.id == selectedHospitalId }
-            if (activeHospital != null && (activeHospital.latitude != 26.9855 || activeHospital.longitude != 75.8513)) {
-                val estMinutes = Math.max(8, (activeHospital.distanceKm * 2.1).toInt())
-                Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(10.dp),
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                    shadowElevation = 4.dp,
-                    border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(PrimaryTeal))
-                ) {
+                    // View Mode Segmented Switcher (Split, Full Map, List)
                     Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp))
+                            .height(36.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Split Mode
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
-                                .background(StatusGreen, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Column {
-                            Text(
-                                text = "Corridor: PHC Amer ➔ ${activeHospital.name.take(16)}...",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextDark
-                            )
-                            Text(
-                                text = "${activeHospital.distanceKm} km • Est. Transit: ~$estMinutes min (Green Light)",
-                                fontSize = 10.sp,
-                                color = PrimaryTeal,
-                                fontWeight = FontWeight.SemiBold
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(if (screenMode == MapScreenMode.SPLIT) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                                .clickable { screenMode = MapScreenMode.SPLIT }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.VerticalSplit,
+                                contentDescription = "Split",
+                                modifier = Modifier.size(15.dp),
+                                tint = if (screenMode == MapScreenMode.SPLIT) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+
+                        // Full Map Mode
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(if (screenMode == MapScreenMode.FULL_MAP) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                                .clickable { screenMode = MapScreenMode.FULL_MAP }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Map,
+                                contentDescription = "Full Map",
+                                modifier = Modifier.size(15.dp),
+                                tint = if (screenMode == MapScreenMode.FULL_MAP) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        // List Only Mode
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(if (screenMode == MapScreenMode.LIST_ONLY) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color.Transparent)
+                                .clickable { screenMode = MapScreenMode.LIST_ONLY }
+                                .padding(horizontal = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.FormatListBulleted,
+                                contentDescription = "List Only",
+                                modifier = Modifier.size(15.dp),
+                                tint = if (screenMode == MapScreenMode.LIST_ONLY) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Refresh Button
+                    IconButton(
+                        onClick = { fetchLiveHospitals(medicineOptions[selectedMedicineIndex].id) },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Refresh",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
             }
         }
 
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = PrimaryTeal)
+        // ── 5. Map Section (Visible in SPLIT and FULL_MAP modes) ──
+        if (screenMode != MapScreenMode.LIST_ONLY) {
+            val mapModifier = if (screenMode == MapScreenMode.FULL_MAP) {
+                Modifier.fillMaxWidth().weight(1f)
+            } else {
+                Modifier
+                    .fillMaxWidth()
+                    .height(210.dp)
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
             }
-        } else if (errorMessage != null) {
-            Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "Failed to load live routing data", fontWeight = FontWeight.Bold, color = StatusRed)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(text = errorMessage!!, fontSize = 12.sp, color = TextMuted)
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Button(onClick = { fetchLiveHospitals(medicineOptions[selectedMedicineIndex].id) }) {
-                        Text("Retry Connection")
+
+            Box(modifier = mapModifier) {
+                Card(
+                    shape = RoundedCornerShape(if (screenMode == MapScreenMode.FULL_MAP) 0.dp else 8.dp),
+                    border = if (screenMode == MapScreenMode.FULL_MAP) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    elevation = CardDefaults.cardElevation(2.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AndroidView(
+                            factory = { ctx ->
+                                val initialSource = when (selectedTileSourceIndex) {
+                                    0 -> osmHotTileSource
+                                    1 -> osmStandardTileSource
+                                    else -> osmTopoTileSource
+                                }
+                                val tileProvider = MapTileProviderBasic(ctx.applicationContext, initialSource)
+                                MapView(ctx, tileProvider).apply {
+                                    setMultiTouchControls(true)
+                                    minZoomLevel = 5.0
+                                    maxZoomLevel = 19.0
+                                    val jaipurAmer = GeoPoint(26.9855, 75.8513)
+                                    controller.setZoom(13.0)
+                                    controller.setCenter(jaipurAmer)
+                                    post {
+                                        controller.setZoom(13.0)
+                                        controller.animateTo(jaipurAmer)
+                                    }
+                                    mapViewInstance = this
+                                    onResume()
+                                }
+                            },
+                            update = { mapView ->
+                                mapView.overlays.clear()
+
+                                val originGeoPoint = GeoPoint(26.9855, 75.8513)
+
+                                // Origin Marker (PHC Amer)
+                                val originMarker = Marker(mapView).apply {
+                                    position = originGeoPoint
+                                    title = if (currentLang == AppLanguage.HINDI) "पीएचसी आमेर (मांग केंद्र)" else "PHC Amer (Origin Facility)"
+                                    snippet = "Lat: 26.9855, Lon: 75.8513"
+                                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                }
+                                mapView.overlays.add(originMarker)
+
+                                // Draw Route Polyline from PHC Amer to selected candidate facility
+                                val targetHospital = hospitals.find { it.id == selectedHospitalId }
+                                if (targetHospital != null && (targetHospital.latitude != 26.9855 || targetHospital.longitude != 75.8513)) {
+                                    val targetGeoPoint = GeoPoint(targetHospital.latitude, targetHospital.longitude)
+                                    val routePolyline = Polyline(mapView).apply {
+                                        outlinePaint.color = Color.parseColor("#0F766E")
+                                        outlinePaint.strokeWidth = 9f
+                                        outlinePaint.strokeCap = Paint.Cap.ROUND
+                                        outlinePaint.pathEffect = DashPathEffect(floatArrayOf(24f, 12f), 0f)
+                                        addPoint(originGeoPoint)
+                                        addPoint(targetGeoPoint)
+                                        title = "Green Corridor: PHC Amer ➔ ${targetHospital.name} (${targetHospital.distanceKm} km)"
+                                    }
+                                    mapView.overlays.add(routePolyline)
+                                }
+
+                                // Add hospital markers
+                                hospitals.forEach { h ->
+                                    val marker = Marker(mapView)
+                                    marker.position = GeoPoint(h.latitude, h.longitude)
+                                    marker.title = h.name
+                                    marker.snippet = "${h.type} • ${h.status} • ${h.distanceKm} km"
+                                    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                    marker.setOnMarkerClickListener { m, _ ->
+                                        selectedHospitalId = h.id
+                                        m.showInfoWindow()
+                                        true
+                                    }
+                                    mapView.overlays.add(marker)
+                                }
+                                mapView.invalidate()
+                            },
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        // Floating Active Route Card on Map
+                        if (activeHospital != null && (activeHospital.latitude != 26.9855 || activeHospital.longitude != 75.8513)) {
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(8.dp),
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                                shadowElevation = 3.dp,
+                                border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(MaterialTheme.colorScheme.primary))
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(7.dp)
+                                            .background(StatusGreen, CircleShape)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Column {
+                                        Text(
+                                            text = "${LanguageManager.s("कॉरिडोर", "Corridor")}: PHC Amer ➔ ${activeHospital.name.take(14)}...",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "${activeHospital.distanceKm} ${LanguageManager.s("किमी", "km")} • ~$estMinutes ${LanguageManager.s("मिनट एक्सप्रेस", "min express")}",
+                                            fontSize = 9.sp,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Map Quick Controls: Zoom In, Zoom Out, Recenter, Fullscreen Toggle
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(
+                                    end = 8.dp,
+                                    bottom = if (screenMode == MapScreenMode.FULL_MAP) 120.dp else 8.dp
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            SmallFloatingActionButton(
+                                onClick = {
+                                    screenMode = if (screenMode == MapScreenMode.FULL_MAP) MapScreenMode.SPLIT else MapScreenMode.FULL_MAP
+                                },
+                                shape = CircleShape,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    if (screenMode == MapScreenMode.FULL_MAP) Icons.Default.FullscreenExit else Icons.Default.Fullscreen,
+                                    contentDescription = "Toggle Fullscreen Map",
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            SmallFloatingActionButton(
+                                onClick = { mapViewInstance?.controller?.zoomIn() },
+                                shape = CircleShape,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Add, contentDescription = "Zoom In", modifier = Modifier.size(16.dp))
+                            }
+
+                            SmallFloatingActionButton(
+                                onClick = { mapViewInstance?.controller?.zoomOut() },
+                                shape = CircleShape,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.Remove, contentDescription = "Zoom Out", modifier = Modifier.size(16.dp))
+                            }
+
+                            SmallFloatingActionButton(
+                                onClick = {
+                                    val jaipurAmer = GeoPoint(26.9855, 75.8513)
+                                    mapViewInstance?.controller?.animateTo(jaipurAmer)
+                                    mapViewInstance?.controller?.setZoom(13.5)
+                                },
+                                shape = CircleShape,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(Icons.Default.MyLocation, contentDescription = "Center on PHC Amer", modifier = Modifier.size(16.dp))
+                            }
+                        }
+
+                        // In FULL MAP mode: Floating Quick Facility Action Card at bottom
+                        if (screenMode == MapScreenMode.FULL_MAP && activeHospital != null) {
+                            Surface(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                shape = RoundedCornerShape(10.dp),
+                                shadowElevation = 6.dp,
+                                color = MaterialTheme.colorScheme.surface,
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                            ) {
+                                Column(modifier = Modifier.padding(10.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .background(
+                                                    if (activeHospital.isCritical) StatusRed.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                                                    RoundedCornerShape(4.dp)
+                                                ),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.LocalHospital,
+                                                contentDescription = null,
+                                                tint = if (activeHospital.isCritical) StatusRed else MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = activeHospital.name,
+                                                fontSize = 12.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = "${activeHospital.type} • ${activeHospital.distanceKm} ${LanguageManager.s("किमी", "km")} • ~$estMinutes ${LanguageManager.s("मिनट", "min")}",
+                                                fontSize = 10.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Surface(
+                                            shape = RoundedCornerShape(2.dp),
+                                            color = if (activeHospital.isCritical) StatusRed.copy(alpha = 0.2f) else StatusGreen.copy(alpha = 0.2f)
+                                        ) {
+                                            Text(
+                                                text = activeHospital.status,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (activeHospital.isCritical) (if (isDark) androidx.compose.ui.graphics.Color(0xFFFCA5A5) else StatusRed) else (if (isDark) androidx.compose.ui.graphics.Color(0xFF86EFAC) else StatusGreen),
+                                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        if (activeHospital.contactPhone != null) {
+                                            OutlinedButton(
+                                                onClick = {
+                                                    val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${activeHospital.contactPhone}"))
+                                                    context.startActivity(dialIntent)
+                                                },
+                                                shape = RoundedCornerShape(4.dp),
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                                modifier = Modifier.weight(1f).height(32.dp)
+                                            ) {
+                                                Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(LanguageManager.s("कॉल करें", "Call"), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                val uri = Uri.parse("geo:${activeHospital.latitude},${activeHospital.longitude}?q=${Uri.encode(activeHospital.name)}")
+                                                val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
+                                                try {
+                                                    context.startActivity(intent)
+                                                } catch (_: Exception) {
+                                                    context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                                }
+                                            },
+                                            shape = RoundedCornerShape(4.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                            modifier = Modifier.weight(1f).height(32.dp)
+                                        ) {
+                                            Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(LanguageManager.s("नेविगेशन", "Navigate"), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                        }
+
+                                        Button(
+                                            onClick = { screenMode = MapScreenMode.SPLIT },
+                                            shape = RoundedCornerShape(4.dp),
+                                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                            modifier = Modifier.weight(1.2f).height(32.dp)
+                                        ) {
+                                            Text(LanguageManager.s("सूची देखें ➔", "View List ➔"), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            // In LIST_ONLY mode: Show compact Corridor Strip with button to view map
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
             ) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .background(StatusGreen, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (selectedMedicineIndex == 0) "Facilities by Haversine Distance" else "Nearest Surplus Hubs for Supplies",
-                            fontSize = 14.sp,
+                            text = "${LanguageManager.s("सक्रिय कॉरिडोर", "Active Corridor")}: PHC Amer ➔ ${activeHospital?.name ?: "Sawai ManSingh Hospital"}",
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextDark
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${hospitals.size} live in DB",
-                            fontSize = 11.sp,
-                            color = PrimaryTeal,
+                            text = "${activeHospital?.distanceKm ?: 10.9} ${LanguageManager.s("किमी", "km")} • ~$estMinutes ${LanguageManager.s("मिनट ग्रीन लाइट क्लीयरेंस", "min green corridor clearance")}",
+                            fontSize = 9.5.sp,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
-                }
-
-                items(hospitals) { hospital ->
-                    val isSelected = selectedHospitalId == hospital.id
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) PrimaryTeal.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface
-                        ),
-                        border = CardDefaults.outlinedCardBorder().copy(
-                            brush = SolidColor(if (isSelected) PrimaryTeal else SlateBorder)
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                selectedHospitalId = hospital.id
-                                mapViewInstance?.controller?.animateTo(GeoPoint(hospital.latitude, hospital.longitude))
-                                mapViewInstance?.controller?.setZoom(14.5)
-                            }
+                    TextButton(
+                        onClick = { screenMode = MapScreenMode.SPLIT },
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(40.dp)
-                                        .background(
-                                            if (hospital.isCritical) StatusRed.copy(alpha = 0.15f) else PrimaryTeal.copy(alpha = 0.15f),
-                                            shape = RoundedCornerShape(10.dp)
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.LocalHospital,
-                                        contentDescription = null,
-                                        tint = if (hospital.isCritical) StatusRed else PrimaryTeal,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                        Text(LanguageManager.s("नक्शा देखें ↗", "View Map ↗"), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+
+        // ── 6. Facility Details List (Shown in SPLIT and LIST_ONLY modes) ──
+        if (screenMode != MapScreenMode.FULL_MAP) {
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            LanguageManager.s("लाइव संस्थान डेटा लोड हो रहा है...", "Loading live facility data..."),
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else if (errorMessage != null) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().weight(1f).padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = LanguageManager.s("डेटा लोड करने में विफल", "Failed to load live routing data"),
+                            fontWeight = FontWeight.Bold,
+                            color = StatusRed,
+                            fontSize = 12.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(text = errorMessage!!, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Button(onClick = { fetchLiveHospitals(medicineOptions[selectedMedicineIndex].id) }) {
+                            Text(LanguageManager.s("पुनः प्रयास करें (Retry)", "Retry Connection"), fontSize = 11.sp)
+                        }
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (selectedMedicineIndex == 0) {
+                                    LanguageManager.s("निकटवर्ती चिकित्सा संस्थान (Haversine Proximity)", "Nearby Healthcare Facilities (Haversine Proximity)")
+                                } else {
+                                    LanguageManager.s("अधिशेष आपूर्ति केंद्र (Surplus Hubs)", "Candidate Surplus Hubs")
+                                },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${LanguageManager.s("कुल", "Total")} ${hospitals.size} ${LanguageManager.s("केंद्र", "centers")}",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    items(hospitals) { hospital ->
+                        val isSelected = selectedHospitalId == hospital.id
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surface
+                            ),
+                            border = androidx.compose.foundation.BorderStroke(
+                                width = if (isSelected) 1.5.dp else 1.dp,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                            ),
+                            shape = RoundedCornerShape(6.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 2.dp else 1.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    selectedHospitalId = hospital.id
+                                    animateMapToFacility(hospital.latitude, hospital.longitude)
                                 }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Box(modifier = Modifier.weight(1f)) {
-                                    Column {
-                                        Text(text = hospital.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .background(
+                                                if (hospital.isCritical) StatusRed.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                                                shape = RoundedCornerShape(4.dp)
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.LocalHospital,
+                                            contentDescription = null,
+                                            tint = if (hospital.isCritical) StatusRed else MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        Column {
+                                            Text(
+                                                text = hospital.name,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Text(
+                                                text = "${hospital.type} • ${hospital.distanceKm} ${LanguageManager.s("किमी (पीएचसी आमेर से)", "km (from PHC Amer)")}",
+                                                fontSize = 10.5.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(2.dp),
+                                        color = if (hospital.isCritical) StatusRed.copy(alpha = 0.2f) else StatusGreen.copy(alpha = 0.2f)
+                                    ) {
                                         Text(
-                                            text = "${hospital.type} • ${hospital.distanceKm} km from PHC Amer",
-                                            fontSize = 11.sp,
-                                            color = TextMuted
+                                            text = hospital.status,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (hospital.isCritical) (if (isDark) androidx.compose.ui.graphics.Color(0xFFFCA5A5) else StatusRed) else (if (isDark) androidx.compose.ui.graphics.Color(0xFF86EFAC) else StatusGreen),
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = if (hospital.isCritical) StatusRed.copy(alpha = 0.15f) else StatusGreen.copy(alpha = 0.15f)
-                                ) {
+
+                                if (hospital.contactPhone != null) {
+                                    Spacer(modifier = Modifier.height(3.dp))
                                     Text(
-                                        text = hospital.status,
+                                        text = "${LanguageManager.s("हेल्पलाइन / संपर्क:", "Helpline / Phone:")} ${hospital.contactPhone}",
                                         fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (hospital.isCritical) StatusRed else StatusGreen,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                            }
 
-                            if (hospital.contactPhone != null) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Contact: ${hospital.contactPhone}",
-                                    fontSize = 11.sp,
-                                    color = TextMuted
-                                )
-                            }
+                                Spacer(modifier = Modifier.height(8.dp))
 
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedButton(
-                                    onClick = {
-                                        selectedHospitalId = hospital.id
-                                        mapViewInstance?.controller?.animateTo(GeoPoint(hospital.latitude, hospital.longitude))
-                                        mapViewInstance?.controller?.setZoom(15.0)
-                                    },
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.weight(1f)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Focus Map", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                }
+                                    Button(
+                                        onClick = {
+                                            selectedHospitalId = hospital.id
+                                            animateMapToFacility(hospital.latitude, hospital.longitude)
+                                            if (screenMode == MapScreenMode.LIST_ONLY) {
+                                                screenMode = MapScreenMode.SPLIT
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(4.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                        modifier = Modifier.weight(1.1f).height(34.dp)
+                                    ) {
+                                        Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(13.dp), tint = MaterialTheme.colorScheme.onPrimary)
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            LanguageManager.s("ग्रीन कॉरिडोर रूट", "Green Corridor"),
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
 
-                                Button(
-                                    onClick = {
-                                        val uri = Uri.parse("geo:${hospital.latitude},${hospital.longitude}?q=${Uri.encode(hospital.name)}")
-                                        val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
-                                        try {
-                                            context.startActivity(intent)
-                                        } catch (_: Exception) {
-                                            context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                    if (hospital.contactPhone != null) {
+                                        OutlinedButton(
+                                            onClick = {
+                                                val dialIntent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${hospital.contactPhone}"))
+                                                context.startActivity(dialIntent)
+                                            },
+                                            shape = RoundedCornerShape(4.dp),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                            modifier = Modifier.weight(0.7f).height(34.dp)
+                                        ) {
+                                            Icon(Icons.Default.Call, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
+                                            Spacer(modifier = Modifier.width(3.dp))
+                                            Text(
+                                                LanguageManager.s("कॉल करें", "Call"),
+                                                fontSize = 10.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
                                         }
-                                    },
-                                    shape = RoundedCornerShape(10.dp),
-                                    modifier = Modifier.weight(1.3f)
-                                ) {
-                                    Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Google Maps", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = {
+                                            val uri = Uri.parse("geo:${hospital.latitude},${hospital.longitude}?q=${Uri.encode(hospital.name)}")
+                                            val intent = Intent(Intent.ACTION_VIEW, uri).apply { setPackage("com.google.android.apps.maps") }
+                                            try {
+                                                context.startActivity(intent)
+                                            } catch (_: Exception) {
+                                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                                            }
+                                        },
+                                        shape = RoundedCornerShape(4.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                        modifier = Modifier.weight(0.9f).height(34.dp)
+                                    ) {
+                                        Icon(Icons.Default.Directions, contentDescription = null, modifier = Modifier.size(12.dp), tint = MaterialTheme.colorScheme.primary)
+                                        Spacer(modifier = Modifier.width(3.dp))
+                                        Text(
+                                            LanguageManager.s("नेविगेशन", "Navigate"),
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
                                 }
                             }
                         }

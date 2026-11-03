@@ -161,138 +161,126 @@ fun ColdChainScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Top App Bar
+        // ── 1. Official National Tricolor Ribbon (Tiranga) ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(TirangaSaffron))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(Color.White))
+            Box(modifier = Modifier.weight(1f).fillMaxHeight().background(TirangaGreen))
+        }
+
+        // ── 2. Official eVIN Top Masthead ──
         Surface(
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = TextDark)
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "IoT Cold-Chain Telemetry",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextDark
+            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        IconButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = GovtNavy)
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        // National Emblem
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_emblem_lion),
+                            contentDescription = "Emblem",
+                            modifier = Modifier.size(28.dp)
                         )
-                        Text(
-                            text = "District Vaccine & Biological Thermal Surveillance",
-                            fontSize = 11.sp,
-                            color = PrimaryTeal
-                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "राष्ट्रीय स्वास्थ्य मिशन • eVIN राजस्थान",
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TirangaSaffron,
+                                letterSpacing = 0.5.sp
+                            )
+                            Text(
+                                text = "इलेक्ट्रॉनिक वैक्सीन इंटेलिजेंस नेटवर्क",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = GovtNavy
+                            )
+                        }
                     }
+
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (breachedUnitsCount > 0) StatusRed.copy(alpha = 0.15f) else StatusGreen.copy(alpha = 0.15f)
+                        shape = RoundedCornerShape(3.dp),
+                        color = if (breachedUnitsCount > 0) StatusRedBg else TirangaGreenLight,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, if (breachedUnitsCount > 0) StatusRed else TirangaGreen)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(8.dp)
-                                    .background(if (breachedUnitsCount > 0) StatusRed else StatusGreen, CircleShape)
+                                    .size(6.dp)
+                                    .background(if (breachedUnitsCount > 0) StatusRed else TirangaGreen, CircleShape)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
-                                text = if (breachedUnitsCount > 0) "$breachedUnitsCount Thermal Breach" else "All Units Safe",
-                                fontSize = 11.sp,
+                                text = if (breachedUnitsCount > 0) "$breachedUnitsCount विचलन (Alert)" else "समस्त सुरक्षित (Optimal)",
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (breachedUnitsCount > 0) StatusRed else StatusGreen
+                                color = if (breachedUnitsCount > 0) StatusRed else TirangaGreen
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Telemetry Quick Stats & Filter Chips
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     FilterChip(
                         selected = selectedFilter == "ALL",
                         onClick = { selectedFilter = "ALL" },
-                        label = { Text("All Units (${units.size})", fontSize = 11.sp) }
+                        shape = RoundedCornerShape(4.dp),
+                        label = { Text("समस्त उपकरण (${units.size})", fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = GovtNavy, selectedLabelColor = Color.White)
                     )
                     FilterChip(
                         selected = selectedFilter == "BREACHED",
                         onClick = { selectedFilter = "BREACHED" },
-                        label = { Text("Breached ($breachedUnitsCount)", fontSize = 11.sp) },
+                        shape = RoundedCornerShape(4.dp),
+                        label = { Text("तापमान विचलन ($breachedUnitsCount)", fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = StatusRed, selectedLabelColor = Color.White),
                         leadingIcon = {
                             if (breachedUnitsCount > 0) {
-                                Icon(Icons.Default.Warning, contentDescription = null, tint = StatusRed, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.Warning, contentDescription = null, tint = if (selectedFilter == "BREACHED") Color.White else StatusRed, modifier = Modifier.size(13.dp))
                             }
                         }
                     )
                     FilterChip(
                         selected = selectedFilter == "AMER",
                         onClick = { selectedFilter = "AMER" },
-                        label = { Text("PHC Amer", fontSize = 11.sp) }
+                        shape = RoundedCornerShape(4.dp),
+                        label = { Text("पीएचसी आमेर (Amer)", fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = GovtNavy, selectedLabelColor = Color.White)
                     )
                 }
             }
         }
 
-        // Active Thermal Emergency Alert Banner if any unit is breached
-        if (breachedUnitsCount > 0) {
-            val primaryBreached = units.first { it.isBreached }
-            Card(
-                colors = CardDefaults.cardColors(containerColor = StatusRed.copy(alpha = 0.08f)),
-                border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(StatusRed)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .background(StatusRed.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Default.DeviceThermostat, contentDescription = null, tint = StatusRed, modifier = Modifier.size(24.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "CRITICAL COLD-CHAIN EXCURSION",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = StatusRed
-                        )
-                        Text(
-                            text = "${primaryBreached.name} at ${primaryBreached.facilityName} is currently ${primaryBreached.currentTempCelsius}°C (Safe ceiling: ${primaryBreached.maxSafeTemp}°C).",
-                            fontSize = 11.sp,
-                            color = TextDark
-                        )
-                    }
-                    Button(
-                        onClick = {
-                            actionDialogMessage = "Emergency Dispatch Alert sent to District Cold-Chain Officer & PHC Amer Medical In-Charge. Redundant ice-pack transfer vehicle dispatched."
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = StatusRed),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Text("Dispatch", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        // List of Telemetry Units
         val filteredUnits = when (selectedFilter) {
             "BREACHED" -> units.filter { it.isBreached }
             "AMER" -> units.filter { it.facilityId == "FAC-JPR-011" }
@@ -302,9 +290,150 @@ fun ColdChainScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            // ── 3. Official eVIN Vaccine Cold Chain Picture Hero Banner ──
+            item {
+                Card(
+                    shape = RoundedCornerShape(4.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SlateBorder),
+                    elevation = CardDefaults.cardElevation(2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                androidx.compose.ui.graphics.Brush.horizontalGradient(
+                                    listOf(Color(0xFF064E3B), Color(0xFF046A38), Color(0xFF0D9488))
+                                )
+                            )
+                            .padding(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Surface(
+                                    shape = RoundedCornerShape(3.dp),
+                                    color = Color.White.copy(alpha = 0.2f),
+                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.White.copy(alpha = 0.4f))
+                                ) {
+                                    Text(
+                                        text = "NHM • UNDP • राजस्थान सरकार",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "जिला वैक्सीन एवं बायोलॉजिकल थर्मल सर्विलांस",
+                                    fontSize = 14.5.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.White
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "आईएलआर व डीप फ्रीजर 24x7 आईओटी टेलीमेट्री • सोलर व ग्रिड बैकअप • तापमान विचलन पर त्वरित वाहन प्रेषण",
+                                    fontSize = 10.5.sp,
+                                    color = Color.White.copy(alpha = 0.88f),
+                                    lineHeight = 14.sp
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            // Cold Chain Hero Illustration Picture
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 96.dp, height = 76.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .border(0.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(4.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.banner_evin_coldchain),
+                                    contentDescription = "eVIN Telemetry Picture",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 4. Active Thermal Emergency Alert Banner if any unit is breached ──
+            if (breachedUnitsCount > 0) {
+                val primaryBreached = units.first { it.isBreached }
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(StatusRed)),
+                        shape = RoundedCornerShape(4.dp),
+                        elevation = CardDefaults.cardElevation(1.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(IntrinsicSize.Min),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(4.dp)
+                                    .fillMaxHeight()
+                                    .background(StatusRed)
+                            )
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .background(StatusRedBg, RoundedCornerShape(4.dp)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.DeviceThermostat, contentDescription = null, tint = StatusRed, modifier = Modifier.size(20.dp))
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "शीत-श्रृंखला तापमान विचलन चेतावनी (CRITICAL EXCURSION)",
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = StatusRed
+                                    )
+                                    Text(
+                                        text = "${primaryBreached.name} (${primaryBreached.facilityName}) का तापमान ${primaryBreached.currentTempCelsius}°C है (सुरक्षित सीमा: ${primaryBreached.maxSafeTemp}°C)।",
+                                        fontSize = 11.sp,
+                                        color = TextDark
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Button(
+                                    onClick = {
+                                        actionDialogMessage = "आपातकालीन वाहन अलर्ट जारी: जिला शीत-श्रृंखला अधिकारी व पीएचसी आमेर प्रभारी को आइस-पैक आरक्षित वाहन रवाना करने के निर्देश दिए गए।"
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = StatusRed),
+                                    shape = RoundedCornerShape(4.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Text("वाहन प्रेषण", fontSize = 10.5.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── 5. Equipment Simulation Controls Bar ──
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -312,40 +441,41 @@ fun ColdChainScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Live Storage Telemetry (${filteredUnits.size} Units)",
-                        fontSize = 13.sp,
+                        text = "पंजीकृत शीत-श्रृंखला उपकरण (${filteredUnits.size} Units)",
+                        fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextDark
+                        color = GovtNavy
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         OutlinedButton(
                             onClick = {
-                                // Simulate power outage temp spike at Amer
                                 units = units.map { u ->
                                     if (u.id == "CCU-AMR-ILR-01") u.copy(currentTempCelsius = 9.2) else u
                                 }
                             },
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            shape = RoundedCornerShape(3.dp),
+                            border = androidx.compose.foundation.BorderStroke(0.8.dp, StatusRed),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 3.dp)
                         ) {
-                            Text("Simulate Spike", fontSize = 10.sp, color = StatusRed)
+                            Text("विचलन सिम्युलेट", fontSize = 10.sp, color = StatusRed, fontWeight = FontWeight.Bold)
                         }
                         OutlinedButton(
                             onClick = {
-                                // Reset Amer to safe temp
                                 units = units.map { u ->
                                     if (u.id == "CCU-AMR-ILR-01") u.copy(currentTempCelsius = 4.5) else u
                                 }
                             },
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                            shape = RoundedCornerShape(3.dp),
+                            border = androidx.compose.foundation.BorderStroke(0.8.dp, TirangaGreen),
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 3.dp)
                         ) {
-                            Text("Reset Safe", fontSize = 10.sp, color = PrimaryTeal)
+                            Text("सामान्य रीसेट", fontSize = 10.sp, color = TirangaGreen, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
 
+            // ── 6. List of Telemetry Equipment Cards ──
             items(filteredUnits) { unit ->
                 val cardBorderColor by animateColorAsState(
                     targetValue = if (unit.isBreached) StatusRed else SlateBorder,
@@ -355,33 +485,48 @@ fun ColdChainScreen(
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(cardBorderColor)),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(4.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
-                                    .size(38.dp)
+                                    .size(36.dp)
                                     .background(
-                                        if (unit.isBreached) StatusRed.copy(alpha = 0.15f) else PrimaryTeal.copy(alpha = 0.15f),
-                                        RoundedCornerShape(10.dp)
+                                        if (unit.isBreached) StatusRedBg else Color(0xFFE0F2FE),
+                                        RoundedCornerShape(4.dp)
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = if (unit.isBreached) Icons.Default.Warning else Icons.Default.AcUnit,
                                     contentDescription = null,
-                                    tint = if (unit.isBreached) StatusRed else PrimaryTeal,
-                                    modifier = Modifier.size(20.dp)
+                                    tint = if (unit.isBreached) StatusRed else Color(0xFF0369A1),
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = unit.name, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        shape = RoundedCornerShape(2.dp),
+                                        color = GovtNavyLight
+                                    ) {
+                                        Text(
+                                            text = unit.id,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = GovtNavy,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(text = unit.name, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = GovtNavy)
                                 Text(
-                                    text = "${unit.facilityName} • Model: ${unit.model}",
+                                    text = "${unit.facilityName} • मॉडल: ${unit.model}",
                                     fontSize = 11.sp,
                                     color = TextMuted
                                 )
@@ -391,66 +536,89 @@ fun ColdChainScreen(
                                     text = "${unit.currentTempCelsius}°C",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = if (unit.isBreached) StatusRed else PrimaryTeal
+                                    color = if (unit.isBreached) StatusRed else TirangaGreen
                                 )
-                                Text(
-                                    text = unit.statusText,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (unit.isBreached) StatusRed else StatusGreen
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Target range bar
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Target: ${unit.minSafeTemp}°C to ${unit.maxSafeTemp}°C",
-                                fontSize = 11.sp,
-                                color = TextDark,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Sensors, contentDescription = null, modifier = Modifier.size(12.dp), tint = PrimaryTeal)
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Ping: ${unit.lastPingSecondsAgo}s ago • Bat: ${unit.batteryPercent}%",
-                                    fontSize = 10.sp,
-                                    color = TextMuted
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(2.dp),
+                                    color = if (unit.isBreached) StatusRedBg else TirangaGreenLight
+                                ) {
+                                    Text(
+                                        text = if (unit.isBreached) "तापमान विचलन" else "सुरक्षित सीमा",
+                                        fontSize = 8.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (unit.isBreached) StatusRed else TirangaGreen,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    )
+                                }
                             }
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
+                        // Target range & telemetry telemetry bar
+                        Surface(
+                            shape = RoundedCornerShape(3.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = androidx.compose.foundation.BorderStroke(0.5.dp, SlateBorder),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "मानक थर्मल सीमा: ${unit.minSafeTemp}°C से ${unit.maxSafeTemp}°C",
+                                    fontSize = 10.5.sp,
+                                    color = TextDark,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Sensors, contentDescription = null, modifier = Modifier.size(12.dp), tint = GovtNavy)
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "पिंग: ${unit.lastPingSecondsAgo}s पूर्व • बैटरी: ${unit.batteryPercent}%",
+                                        fontSize = 10.sp,
+                                        color = TextMuted
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
                         Text(
-                            text = "Stored Biologicals: ${unit.storedSupplies.joinToString(", ")}",
+                            text = "संरक्षित बायोलॉजिकल/वैक्सीन: ${unit.storedSupplies.joinToString(", ")}",
                             fontSize = 11.sp,
                             color = TextDark,
                             fontWeight = FontWeight.Normal
                         )
 
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Power: ${unit.powerSource}",
-                            fontSize = 10.sp,
-                            color = TextMuted
-                        )
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "ऊर्जा स्रोत: ${unit.powerSource}",
+                                fontSize = 10.sp,
+                                color = TextMuted
+                            )
+                            Text(
+                                text = "eVIN IoT प्रमाणित",
+                                fontSize = 10.sp,
+                                color = TirangaGreen,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
                 }
             }
 
             item {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

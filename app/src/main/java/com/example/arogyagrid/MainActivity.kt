@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         UserSession.init(this)
+        com.example.arogyagrid.core.LanguageManager.init(this)
 
         // Initialize WorkManager Hybrid Sync Engine
         SyncManager.schedulePeriodicSync(this)

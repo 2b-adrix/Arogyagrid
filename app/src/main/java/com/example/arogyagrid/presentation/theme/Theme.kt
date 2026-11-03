@@ -22,8 +22,8 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryTealSoft,
-    secondary = PrimaryTeal,
+    primary = Color(0xFF38BDF8),
+    secondary = PrimaryTealSoft,
     tertiary = AccentBlueLight,
     background = DarkBg,
     surface = DarkCard,

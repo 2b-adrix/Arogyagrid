@@ -114,7 +114,9 @@ fun DashboardScreen(
             onSearchQueryChange = { searchQuery = it },
             onSyncClick = { viewModel.loadDashboard() },
             onCopilotClick = { onNavigateToScreen("ai_assistant") },
-            onProfileClick = { onNavigateToScreen("profile") }
+            onProfileClick = { onNavigateToScreen("profile") },
+            onLogoutClick = { onNavigateToScreen("login") },
+            onLoginClick = { onNavigateToScreen("login") }
         )
 
         Box(

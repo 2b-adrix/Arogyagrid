@@ -188,6 +188,16 @@ fun AppNavigation() {
                 HospitalMapScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onLogout = {
+                        UserSession.logout()
+                        authViewModel.logout()
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.navigate("login")
                     }
                 )
             }
