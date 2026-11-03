@@ -13,6 +13,8 @@ data class FacilityResponse(
     val totalStaff: Int,
     val activeStaff: Int,
     val staffingRatio: Double,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val address: String?,
     val contactPhone: String?
 )
