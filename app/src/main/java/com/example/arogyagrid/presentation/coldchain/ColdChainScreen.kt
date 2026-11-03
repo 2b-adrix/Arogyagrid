@@ -192,7 +192,7 @@ fun ColdChainScreen(
                             onClick = onNavigateBack,
                             modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = GovtNavy)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                         }
                         Spacer(modifier = Modifier.width(4.dp))
                         // National Emblem
@@ -214,14 +214,14 @@ fun ColdChainScreen(
                                 text = "इलेक्ट्रॉनिक वैक्सीन इंटेलिजेंस नेटवर्क",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = GovtNavy
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
 
                     Surface(
                         shape = RoundedCornerShape(3.dp),
-                        color = if (breachedUnitsCount > 0) StatusRedBg else TirangaGreenLight,
+                        color = if (breachedUnitsCount > 0) StatusRedBg else StatusGreenBg,
                         border = androidx.compose.foundation.BorderStroke(1.dp, if (breachedUnitsCount > 0) StatusRed else TirangaGreen)
                     ) {
                         Row(
@@ -256,14 +256,24 @@ fun ColdChainScreen(
                         onClick = { selectedFilter = "ALL" },
                         shape = RoundedCornerShape(4.dp),
                         label = { Text("समस्त उपकरण (${units.size})", fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = GovtNavy, selectedLabelColor = Color.White)
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                     FilterChip(
                         selected = selectedFilter == "BREACHED",
                         onClick = { selectedFilter = "BREACHED" },
                         shape = RoundedCornerShape(4.dp),
                         label = { Text("तापमान विचलन ($breachedUnitsCount)", fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = StatusRed, selectedLabelColor = Color.White),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = StatusRed,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
                         leadingIcon = {
                             if (breachedUnitsCount > 0) {
                                 Icon(Icons.Default.Warning, contentDescription = null, tint = if (selectedFilter == "BREACHED") Color.White else StatusRed, modifier = Modifier.size(13.dp))
@@ -275,7 +285,12 @@ fun ColdChainScreen(
                         onClick = { selectedFilter = "AMER" },
                         shape = RoundedCornerShape(4.dp),
                         label = { Text("पीएचसी आमेर (Amer)", fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = GovtNavy, selectedLabelColor = Color.White)
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
                 }
             }
@@ -444,7 +459,7 @@ fun ColdChainScreen(
                         text = "पंजीकृत शीत-श्रृंखला उपकरण (${filteredUnits.size} Units)",
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GovtNavy
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         OutlinedButton(

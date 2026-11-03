@@ -1,69 +1,36 @@
 package com.example.arogyagrid.presentation.forecast
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.arogyagrid.R
+import com.example.arogyagrid.core.LanguageManager
 import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.presentation.components.CommandTopBar
 import com.example.arogyagrid.presentation.components.RiskBadge
-import com.example.arogyagrid.presentation.theme.GovtNavy
-import com.example.arogyagrid.presentation.theme.GovtNavyLight
-import com.example.arogyagrid.presentation.theme.PrimaryTeal
-import com.example.arogyagrid.presentation.theme.SlateBorder
-import com.example.arogyagrid.presentation.theme.StatusOrange
-import com.example.arogyagrid.presentation.theme.StatusOrangeBg
-import com.example.arogyagrid.presentation.theme.StatusRed
-import com.example.arogyagrid.presentation.theme.StatusRedBg
-import com.example.arogyagrid.presentation.theme.TextDark
-import com.example.arogyagrid.presentation.theme.TextMuted
-import com.example.arogyagrid.presentation.theme.TirangaGreen
-import com.example.arogyagrid.presentation.theme.TirangaGreenLight
-import com.example.arogyagrid.presentation.theme.TirangaSaffron
+import com.example.arogyagrid.presentation.theme.*
 import com.example.arogyagrid.presentation.viewmodel.ForecastViewModel
 
 @Composable
 fun ForecastScreen(
-    viewModel: ForecastViewModel = viewModel()
+    viewModel: ForecastViewModel = viewModel(),
+    onNavigateToProfile: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
@@ -78,38 +45,41 @@ fun ForecastScreen(
             districtName = UserSession.userDistrict ?: "Jaipur",
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
-            onSyncClick = { viewModel.loadForecast() }
+            onSyncClick = { viewModel.loadForecast() },
+            onProfileClick = onNavigateToProfile,
+            onLogoutClick = onLogout,
+            onLoginClick = onNavigateToLogin
         )
 
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
-            // Official Section Masthead
+            // Official Section Masthead (Clean & Organized)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(Color.White)
-                        .border(1.dp, SlateBorder, RoundedCornerShape(4.dp)),
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_emblem_lion),
-                        contentDescription = "Emblem",
-                        modifier = Modifier.size(26.dp)
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                        contentDescription = "Forecast",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(
-                        text = "आईडीएसपी मौसमी मांग व प्रकोप प्रक्षेपण • DEMAND FORECAST",
-                        fontSize = 14.5.sp,
+                        text = LanguageManager.s("आईडीएसपी मौसमी मांग व प्रकोप प्रक्षेपण • DEMAND FORECAST", "IDSP Epidemic Demand Projections • DEMAND FORECAST"),
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GovtNavy
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "राष्ट्रीय स्वास्थ्य मिशन (NHM) • 7-दिवसीय उपभोग प्रवृत्ति, मांग वृद्धि एवं स्टॉकआउट विश्लेषण",
+                        text = LanguageManager.s("राष्ट्रीय स्वास्थ्य मिशन (NHM) • 7-दिवसीय उपभोग प्रवृत्ति, मांग वृद्धि एवं स्टॉकआउट विश्लेषण", "National Health Mission • 7-Day ARIMA Trend, Surge & Stockout Analysis"),
                         fontSize = 10.5.sp,
-                        color = TextMuted
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -118,7 +88,7 @@ fun ForecastScreen(
 
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = GovtNavy)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (uiState.error != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -128,9 +98,12 @@ fun ForecastScreen(
                         Button(
                             onClick = { viewModel.loadForecast() },
                             shape = RoundedCornerShape(4.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = GovtNavy)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
-                            Text("पुनः प्रयास करें (Retry)")
+                            Text(LanguageManager.s("पुनः प्रयास करें (Retry)", "Retry Connection"))
                         }
                     }
                 }
@@ -148,9 +121,9 @@ fun ForecastScreen(
                     items(filteredItems, key = { "${it.facilityId}_${it.medicineId}" }) { item ->
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(MaterialTheme.colorScheme.outline)),
                             elevation = CardDefaults.cardElevation(1.dp),
-                            shape = RoundedCornerShape(4.dp),
+                            shape = RoundedCornerShape(6.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(12.dp)) {
@@ -162,30 +135,30 @@ fun ForecastScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Surface(
-                                                shape = RoundedCornerShape(2.dp),
-                                                color = GovtNavyLight
+                                                shape = RoundedCornerShape(3.dp),
+                                                color = MaterialTheme.colorScheme.primaryContainer
                                             ) {
                                                 Text(
                                                     text = "EDL-${(item.medicineName.hashCode() % 899 + 100).let { if (it < 0) -it else it }}",
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = GovtNavy,
-                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                                 )
                                             }
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = item.medicineName,
                                                 fontWeight = FontWeight.Bold,
-                                                fontSize = 14.5.sp,
-                                                color = GovtNavy
+                                                fontSize = 14.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = item.facilityName,
                                             fontSize = 11.sp,
-                                            color = TextMuted
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                     RiskBadge(riskLevel = item.trendDirection)
@@ -194,9 +167,9 @@ fun ForecastScreen(
                                 Spacer(modifier = Modifier.height(8.dp))
 
                                 Surface(
-                                    shape = RoundedCornerShape(3.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, SlateBorder),
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
@@ -206,17 +179,22 @@ fun ForecastScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Column {
-                                            Text("वर्तमान दैनिक खपत", fontSize = 9.sp, color = TextMuted)
-                                            Text("${item.currentDailyConsumption}/दिन", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                            Text(LanguageManager.s("वर्तमान दैनिक खपत", "Daily Inflow"), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("${item.currentDailyConsumption}/${LanguageManager.s("दिन", "day")}", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                         }
                                         Column {
-                                            Text("अनुमानित दैनिक मांग", fontSize = 9.sp, color = TextMuted)
-                                            Text("${item.predictedDailyConsumption}/दिन", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = if (item.predictedDailyConsumption > item.currentDailyConsumption * 1.5) StatusRed else GovtNavy)
+                                            Text(LanguageManager.s("अनुमानित दैनिक मांग", "Projected Demand"), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text(
+                                                "${item.predictedDailyConsumption}/${LanguageManager.s("दिन", "day")}",
+                                                fontSize = 13.5.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (item.predictedDailyConsumption > item.currentDailyConsumption * 1.5) StatusRed else MaterialTheme.colorScheme.primary
+                                            )
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
-                                            Text("स्टॉकआउट संभावित", fontSize = 9.sp, color = TextMuted)
+                                            Text(LanguageManager.s("स्टॉकआउट संभावित", "Stockout Horizon"), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             Text(
-                                                "${item.predictedDaysToStockout} दिन",
+                                                "${item.predictedDaysToStockout} ${LanguageManager.s("दिन", "days")}",
                                                 fontSize = 13.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = if (item.predictedDaysToStockout <= 5) StatusRed else TirangaGreen
@@ -226,15 +204,25 @@ fun ForecastScreen(
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
-                                HorizontalDivider(color = SlateBorder, thickness = 0.5.dp)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline, thickness = 0.5.dp)
                                 Spacer(modifier = Modifier.height(6.dp))
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("7-दिवसीय उपभोग प्रक्षेपण (दैनिक यूनिट):", fontSize = 9.5.sp, color = TextMuted, fontWeight = FontWeight.SemiBold)
-                                    Text("IDSP-ARIMA टाइम सीरीज v2.4", fontSize = 9.sp, color = GovtNavy, fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = LanguageManager.s("7-दिवसीय उपभोग प्रक्षेपण (दैनिक यूनिट):", "7-Day Consumption Projections (Units):"),
+                                        fontSize = 9.5.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = "IDSP-ARIMA v2.4",
+                                        fontSize = 9.sp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Row(
@@ -243,16 +231,16 @@ fun ForecastScreen(
                                 ) {
                                     item.weeklyForecast.forEachIndexed { idx, valUnit ->
                                         Surface(
-                                            shape = RoundedCornerShape(2.dp),
-                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                            border = androidx.compose.foundation.BorderStroke(0.5.dp, SlateBorder)
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline)
                                         ) {
                                             Column(
                                                 horizontalAlignment = Alignment.CenterHorizontally,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                                             ) {
-                                                Text("दिन ${idx + 1}", fontSize = 8.5.sp, color = TextMuted)
-                                                Text("${valUnit.toInt()}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                                Text("${LanguageManager.s("दिन", "D")}${idx + 1}", fontSize = 8.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                Text("${valUnit.toInt()}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                             }
                                         }
                                     }

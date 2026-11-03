@@ -3,46 +3,19 @@ package com.example.arogyagrid.presentation.inventory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
@@ -51,34 +24,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.arogyagrid.R
+import com.example.arogyagrid.core.LanguageManager
 import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.domain.model.InventoryItem
 import com.example.arogyagrid.presentation.components.CommandTopBar
 import com.example.arogyagrid.presentation.components.RiskBadge
 import com.example.arogyagrid.presentation.components.SyntheticDataBanner
-import com.example.arogyagrid.presentation.theme.GovtNavy
-import com.example.arogyagrid.presentation.theme.GovtNavyLight
-import com.example.arogyagrid.presentation.theme.PrimaryTeal
-import com.example.arogyagrid.presentation.theme.SlateBorder
-import com.example.arogyagrid.presentation.theme.StatusGreen
-import com.example.arogyagrid.presentation.theme.StatusOrange
-import com.example.arogyagrid.presentation.theme.StatusOrangeBg
-import com.example.arogyagrid.presentation.theme.StatusRed
-import com.example.arogyagrid.presentation.theme.StatusRedBg
-import com.example.arogyagrid.presentation.theme.TextDark
-import com.example.arogyagrid.presentation.theme.TextMuted
-import com.example.arogyagrid.presentation.theme.TirangaGreen
-import com.example.arogyagrid.presentation.theme.TirangaSaffron
-import com.example.arogyagrid.presentation.theme.TirangaSaffronLight
-import com.example.arogyagrid.presentation.viewmodel.InventoryViewModel
-
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.material.icons.filled.QrCodeScanner
 import com.example.arogyagrid.presentation.scanner.BarcodeScannerDialog
+import com.example.arogyagrid.presentation.theme.*
+import com.example.arogyagrid.presentation.viewmodel.InventoryViewModel
 
 @Composable
 fun InventoryScreen(
-    viewModel: InventoryViewModel = viewModel()
+    viewModel: InventoryViewModel = viewModel(),
+    onNavigateToProfile: () -> Unit = {},
+    onLogout: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
@@ -119,14 +80,17 @@ fun InventoryScreen(
             districtName = UserSession.userDistrict ?: "Jaipur",
             searchQuery = searchQuery,
             onSearchQueryChange = { searchQuery = it },
-            onSyncClick = { viewModel.loadInventory() }
+            onSyncClick = { viewModel.loadInventory() },
+            onProfileClick = onNavigateToProfile,
+            onLogoutClick = onLogout,
+            onLoginClick = onNavigateToLogin
         )
 
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) {
             // ── 1. Official RMSCL e-Aushadhi Central Warehouse Picture Banner ──
             Card(
-                shape = RoundedCornerShape(4.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, SlateBorder),
+                shape = RoundedCornerShape(6.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 elevation = CardDefaults.cardElevation(2.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -162,15 +126,18 @@ fun InventoryScreen(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "जिला केंद्रीय औषधि भंडार व लॉजिस्टिक्स",
-                                fontSize = 15.sp,
+                                text = LanguageManager.s("जिला केंद्रीय औषधि भंडार व लॉजिस्टिक्स", "District Central Drug Warehouse & Logistics"),
+                                fontSize = 14.5.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "आवश्यक औषधि सूची (EDL) बैच इन्वेंटरी, क्यूआर बारकोड प्रमाणीकरण व दैनिक खपत निगरानी",
-                                fontSize = 10.5.sp,
+                                text = LanguageManager.s(
+                                    "आवश्यक औषधि सूची (EDL) बैच इन्वेंटरी, क्यूआर बारकोड प्रमाणीकरण व दैनिक खपत निगरानी",
+                                    "Essential Drug List (EDL) Batch Inventory, QR Barcode Verification & Daily Consumption Tracking"
+                                ),
+                                fontSize = 10.sp,
                                 color = Color.White.copy(alpha = 0.88f),
                                 lineHeight = 14.sp
                             )
@@ -181,10 +148,10 @@ fun InventoryScreen(
                         // Warehouse Hero Illustration Picture
                         Box(
                             modifier = Modifier
-                                .size(width = 96.dp, height = 76.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .size(width = 88.dp, height = 72.dp)
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(Color.White.copy(alpha = 0.12f))
-                                .border(0.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(4.dp)),
+                                .border(0.5.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(6.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -209,10 +176,10 @@ fun InventoryScreen(
                 ) {
                     items(filterOptions) { filter ->
                         val labelText = when (filter) {
-                            "Vital" -> "अति-आवश्यक (Vital)"
-                            "Critical Shortage" -> "स्टॉक संकट"
-                            "Surplus" -> "अधिशेष"
-                            else -> "सभी (All)"
+                            "Vital" -> LanguageManager.s("अति-आवश्यक (Vital)", "Vital Medicines")
+                            "Critical Shortage" -> LanguageManager.s("स्टॉक संकट", "Critical Shortage")
+                            "Surplus" -> LanguageManager.s("अधिशेष (Surplus)", "Surplus")
+                            else -> LanguageManager.s("सभी (All)", "All (All)")
                         }
                         FilterChip(
                             selected = selectedFilter == filter,
@@ -220,8 +187,10 @@ fun InventoryScreen(
                             shape = RoundedCornerShape(4.dp),
                             label = { Text(labelText, fontSize = 10.5.sp, fontWeight = FontWeight.Bold) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = GovtNavy,
-                                selectedLabelColor = Color.White
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         )
                     }
@@ -232,8 +201,11 @@ fun InventoryScreen(
                 // CameraX Barcode Scanner Launch Button
                 Button(
                     onClick = { showScannerDialog = true },
-                    shape = RoundedCornerShape(4.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = GovtNavy),
+                    shape = RoundedCornerShape(6.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                 ) {
                     Icon(
@@ -242,7 +214,7 @@ fun InventoryScreen(
                         modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("क्यूआर स्कैन", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(LanguageManager.s("क्यूआर स्कैन", "QR Scanner"), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -270,7 +242,7 @@ fun InventoryScreen(
 
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = GovtNavy)
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (uiState.error != null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -280,9 +252,12 @@ fun InventoryScreen(
                         Button(
                             onClick = { viewModel.loadInventory() },
                             shape = RoundedCornerShape(4.dp),
-                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = GovtNavy)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
-                            Text("Retry")
+                            Text(LanguageManager.s("पुनः प्रयास करें (Retry)", "Retry Connection"))
                         }
                     }
                 }
@@ -294,8 +269,8 @@ fun InventoryScreen(
                     items(filteredItems) { item ->
                         Card(
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
-                            shape = RoundedCornerShape(4.dp),
+                            border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(MaterialTheme.colorScheme.outline)),
+                            shape = RoundedCornerShape(6.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -308,30 +283,30 @@ fun InventoryScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             Surface(
-                                                shape = RoundedCornerShape(2.dp),
-                                                color = GovtNavyLight
+                                                shape = RoundedCornerShape(3.dp),
+                                                color = MaterialTheme.colorScheme.primaryContainer
                                             ) {
                                                 Text(
                                                     text = "EDL-${(item.medicineId.hashCode() % 899 + 100).let { if (it < 0) -it else it }}",
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = GovtNavy,
-                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                                 )
                                             }
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = item.medicineName,
-                                                fontSize = 14.5.sp,
+                                                fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = GovtNavy
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                         }
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "${item.facilityName} • बैच क्र: ${item.batchNumber ?: "BATCH-JPR-2026"}",
+                                            text = "${item.facilityName} • ${LanguageManager.s("बैच क्र", "Batch")}: ${item.batchNumber ?: "BATCH-JPR-2026"}",
                                             fontSize = 11.sp,
-                                            color = TextMuted
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                     RiskBadge(riskLevel = item.criticality)
@@ -341,9 +316,9 @@ fun InventoryScreen(
 
                                 // Government Stock Ledger Triple Column
                                 Surface(
-                                    shape = RoundedCornerShape(3.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, SlateBorder),
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = androidx.compose.foundation.BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
@@ -353,17 +328,17 @@ fun InventoryScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Column {
-                                            Text("स्टॉक शेष (CLOSING)", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Medium)
-                                            Text("${item.closingStock} यूनिट", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                            Text(LanguageManager.s("स्टॉक शेष (CLOSING)", "CLOSING STOCK"), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                                            Text("${item.closingStock} ${LanguageManager.s("यूनिट", "units")}", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                         }
                                         Column {
-                                            Text("दैनिक खपत (DAILY)", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Medium)
-                                            Text("${item.avgDailyConsumption}/दिन", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = TextDark)
+                                            Text(LanguageManager.s("दैनिक खपत (DAILY)", "DAILY CONSUMPTION"), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                                            Text("${item.avgDailyConsumption}/${LanguageManager.s("दिन", "day")}", fontSize = 13.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
-                                            Text("कवरेज अवधि (COVERAGE)", fontSize = 9.sp, color = TextMuted, fontWeight = FontWeight.Medium)
+                                            Text(LanguageManager.s("कवरेज अवधि (COVERAGE)", "COVERAGE PERIOD"), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
                                             Text(
-                                                "${item.coverageDays} दिन",
+                                                "${item.coverageDays} ${LanguageManager.s("दिन", "days")}",
                                                 fontSize = 13.5.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = if (item.coverageDays <= 5) StatusRed else StatusGreen
@@ -378,12 +353,12 @@ fun InventoryScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        text = "न्यूनतम मानक: ${item.minimumStock} | अधिकतम: ${item.maximumStock} | अंतर: ${item.stockGap}",
+                                        text = "${LanguageManager.s("न्यूनतम मानक", "Min")}: ${item.minimumStock} | ${LanguageManager.s("अधिकतम", "Max")}: ${item.maximumStock} | ${LanguageManager.s("अंतर", "Gap")}: ${item.stockGap}",
                                         fontSize = 10.5.sp,
-                                        color = TextMuted
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
-                                        text = "RMSCL e-Aushadhi प्रमाणित",
+                                        text = LanguageManager.s("RMSCL e-Aushadhi प्रमाणित", "e-Aushadhi Verified"),
                                         fontSize = 10.sp,
                                         color = TirangaGreen,
                                         fontWeight = FontWeight.SemiBold
@@ -402,10 +377,13 @@ fun InventoryScreen(
                                             transactionType = "RECEIPT"
                                         },
                                         shape = RoundedCornerShape(4.dp),
-                                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = GovtNavy),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary
+                                        ),
                                         modifier = Modifier.weight(1f)
                                     ) {
-                                        Text("स्टॉक आवक (Receive)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+                                        Text(LanguageManager.s("स्टॉक आवक (Receive)", "Stock Intake (Receive)"), fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
                                     }
 
                                     OutlinedButton(
@@ -414,10 +392,13 @@ fun InventoryScreen(
                                             transactionType = "ISSUE"
                                         },
                                         shape = RoundedCornerShape(4.dp),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, GovtNavy),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.primary
+                                        ),
                                         modifier = Modifier.weight(1f)
                                     ) {
-                                        Text("स्टॉक निर्गम (Issue)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = GovtNavy)
+                                        Text(LanguageManager.s("स्टॉक निर्गम (Issue)", "Stock Outflow (Issue)"), fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                                     }
                                 }
                             }
@@ -432,16 +413,17 @@ fun InventoryScreen(
             val item = showTransactionDialog!!
             AlertDialog(
                 onDismissRequest = { showTransactionDialog = null },
-                title = { Text("Record Stock $transactionType") },
+                containerColor = MaterialTheme.colorScheme.surface,
+                title = { Text(LanguageManager.s("स्टॉक प्रविष्टि दर्ज करें ($transactionType)", "Record Stock $transactionType"), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) },
                 text = {
                     Column {
-                        Text("Medicine: ${item.medicineName}", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                        Text("Facility: ${item.facilityName}", fontSize = 12.sp, color = TextMuted)
+                        Text("${LanguageManager.s("औषधि", "Medicine")}: ${item.medicineName}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("${LanguageManager.s("संस्थान", "Facility")}: ${item.facilityName}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedTextField(
                             value = quantityText,
                             onValueChange = { quantityText = it },
-                            label = { Text("Quantity Units") },
+                            label = { Text(LanguageManager.s("यूनिट मात्रा", "Quantity Units")) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -458,15 +440,22 @@ fun InventoryScreen(
                                 quantity = qty
                             )
                             showTransactionDialog = null
-                            successToast = "Successfully recorded $transactionType of $qty units for ${item.medicineName}"
-                        }
+                            successToast = if (LanguageManager.currentLanguage.value == com.example.arogyagrid.core.AppLanguage.HINDI)
+                                "${item.medicineName} हेतु $qty यूनिट $transactionType सफलतापूर्ण दर्ज!"
+                            else
+                                "Recorded $transactionType of $qty units for ${item.medicineName}"
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
                     ) {
-                        Text("Confirm")
+                        Text(LanguageManager.s("पुष्टि करें (Confirm)", "Confirm"))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showTransactionDialog = null }) {
-                        Text("Cancel")
+                        Text(LanguageManager.s("रद्द करें (Cancel)", "Cancel"), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             )
@@ -487,7 +476,10 @@ fun InventoryScreen(
                         quantityText = scanned.quantity?.toString() ?: "100"
                         transactionType = "RECEIPT"
                         showTransactionDialog = matchedItem
-                        successToast = "Barcode scanned! Auto-selected ${matchedItem.medicineName} (${scanned.batchNumber ?: "Batch"})"
+                        successToast = if (LanguageManager.currentLanguage.value == com.example.arogyagrid.core.AppLanguage.HINDI)
+                            "बारकोड स्कैन सफल! चयनित: ${matchedItem.medicineName} (${scanned.batchNumber ?: "Batch"})"
+                        else
+                            "Barcode scanned! Auto-selected ${matchedItem.medicineName} (${scanned.batchNumber ?: "Batch"})"
                     } else {
                         successToast = "Scanned barcode: ${scanned.rawValue}"
                     }

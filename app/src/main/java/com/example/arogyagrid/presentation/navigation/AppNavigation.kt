@@ -9,25 +9,30 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.arogyagrid.core.LanguageManager
 import com.example.arogyagrid.core.UserSession
 import com.example.arogyagrid.presentation.ai.AiAssistantScreen
 import com.example.arogyagrid.presentation.audit.AuditLogsScreen
 import com.example.arogyagrid.presentation.auth.LoginScreen
+import com.example.arogyagrid.presentation.coldchain.ColdChainScreen
 import com.example.arogyagrid.presentation.dashboard.DashboardScreen
 import com.example.arogyagrid.presentation.facility.RegisterFacilityScreen
 import com.example.arogyagrid.presentation.forecast.ForecastScreen
 import com.example.arogyagrid.presentation.inventory.InventoryScreen
 import com.example.arogyagrid.presentation.map.HospitalMapScreen
-import com.example.arogyagrid.presentation.coldchain.ColdChainScreen
 import com.example.arogyagrid.presentation.outbreak.EpidemicSurveillanceScreen
 import com.example.arogyagrid.presentation.profile.ProfileScreen
 import com.example.arogyagrid.presentation.redistribution.RedistributionReviewScreen
@@ -36,12 +41,12 @@ import com.example.arogyagrid.presentation.risk.MedicineRiskScreen
 import com.example.arogyagrid.presentation.splash.SplashScreen
 import com.example.arogyagrid.presentation.viewmodel.*
 
-sealed class NavItem(val route: String, val label: String, val icon: ImageVector) {
-    object Dashboard : NavItem("dashboard", "Center", Icons.Default.Dashboard)
-    object MedicineRisk : NavItem("medicine_risk", "Risk", Icons.Default.Warning)
-    object Inventory : NavItem("inventory", "Inventory", Icons.Default.Inventory)
-    object Redistribution : NavItem("redistribution", "Approval", Icons.Default.SwapHoriz)
-    object Forecast : NavItem("forecast", "Forecast", Icons.AutoMirrored.Filled.TrendingUp)
+sealed class NavItem(val route: String, val labelHi: String, val labelEn: String, val icon: ImageVector) {
+    object Dashboard : NavItem("dashboard", "डैशबोर्ड", "Center", Icons.Default.Dashboard)
+    object MedicineRisk : NavItem("medicine_risk", "जोखिम", "Risk", Icons.Default.Warning)
+    object Inventory : NavItem("inventory", "इन्वेंटरी", "Inventory", Icons.Default.Inventory)
+    object Redistribution : NavItem("redistribution", "अनुमोदन", "Approval", Icons.Default.SwapHoriz)
+    object Forecast : NavItem("forecast", "पूर्वानुमान", "Forecast", Icons.AutoMirrored.Filled.TrendingUp)
 }
 
 @Composable
@@ -72,13 +77,35 @@ fun AppNavigation() {
 
     val startDestination = if (UserSession.isLoggedIn) "dashboard" else "login"
 
+    val currentLang by LanguageManager.currentLanguage.collectAsState()
+
+    val onLogoutAction: () -> Unit = {
+        UserSession.logout()
+        authViewModel.logout()
+        navController.navigate("login") {
+            popUpTo(0) { inclusive = true }
+        }
+    }
+    val onNavigateToLoginAction: () -> Unit = {
+        navController.navigate("login")
+    }
+    val onNavigateToProfileAction: () -> Unit = {
+        navController.navigate("profile")
+    }
+
     Scaffold(
         bottomBar = {
             if (currentRoute != "login" && currentRoute != "splash" && currentRoute != "register_facility" && currentRoute != "hospital_map" && currentRoute != "cold_chain" && currentRoute != "outbreak_surveillance") {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    tonalElevation = 3.dp
+                ) {
                     navItems.forEach { item ->
+                        val isSelected = currentRoute == item.route
+                        val label = if (currentLang == com.example.arogyagrid.core.AppLanguage.HINDI) item.labelHi else item.labelEn
                         NavigationBarItem(
-                            selected = currentRoute == item.route,
+                            selected = isSelected,
                             onClick = {
                                 navController.navigate(item.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
@@ -88,8 +115,21 @@ fun AppNavigation() {
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) }
+                            icon = { Icon(item.icon, contentDescription = label) },
+                            label = {
+                                Text(
+                                    label,
+                                    fontSize = 10.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         )
                     }
                 }
@@ -128,21 +168,45 @@ fun AppNavigation() {
                         navController.navigate("redistribution")
                     },
                     onNavigateToScreen = { route ->
-                        navController.navigate(route)
+                        if (route == "login") {
+                            onLogoutAction()
+                        } else {
+                            navController.navigate(route)
+                        }
                     }
                 )
             }
             composable("medicine_risk") {
-                MedicineRiskScreen(viewModel = riskViewModel)
+                MedicineRiskScreen(
+                    viewModel = riskViewModel,
+                    onNavigateToProfile = onNavigateToProfileAction,
+                    onLogout = onLogoutAction,
+                    onNavigateToLogin = onNavigateToLoginAction
+                )
             }
             composable("inventory") {
-                InventoryScreen(viewModel = inventoryViewModel)
+                InventoryScreen(
+                    viewModel = inventoryViewModel,
+                    onNavigateToProfile = onNavigateToProfileAction,
+                    onLogout = onLogoutAction,
+                    onNavigateToLogin = onNavigateToLoginAction
+                )
             }
             composable("redistribution") {
-                RedistributionReviewScreen(viewModel = redistributionViewModel)
+                RedistributionReviewScreen(
+                    viewModel = redistributionViewModel,
+                    onNavigateToProfile = onNavigateToProfileAction,
+                    onLogout = onLogoutAction,
+                    onNavigateToLogin = onNavigateToLoginAction
+                )
             }
             composable("forecast") {
-                ForecastScreen(viewModel = forecastViewModel)
+                ForecastScreen(
+                    viewModel = forecastViewModel,
+                    onNavigateToProfile = onNavigateToProfileAction,
+                    onLogout = onLogoutAction,
+                    onNavigateToLogin = onNavigateToLoginAction
+                )
             }
             composable("ai_assistant") {
                 AiAssistantScreen(
@@ -167,13 +231,7 @@ fun AppNavigation() {
                     onNavigateToMap = {
                         navController.navigate("hospital_map")
                     },
-                    onLogout = {
-                        UserSession.logout()
-                        authViewModel.logout()
-                        navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    }
+                    onLogout = onLogoutAction
                 )
             }
             composable("register_facility") {
@@ -189,16 +247,8 @@ fun AppNavigation() {
                     onNavigateBack = {
                         navController.popBackStack()
                     },
-                    onLogout = {
-                        UserSession.logout()
-                        authViewModel.logout()
-                        navController.navigate("login") {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                    onNavigateToLogin = {
-                        navController.navigate("login")
-                    }
+                    onLogout = onLogoutAction,
+                    onNavigateToLogin = onNavigateToLoginAction
                 )
             }
             composable("cold_chain") {
