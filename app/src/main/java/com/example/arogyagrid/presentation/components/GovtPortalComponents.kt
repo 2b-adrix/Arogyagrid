@@ -237,16 +237,18 @@ fun GovtServicesGrid(
 ) {
     val context = LocalContext.current
     val primaryColor = MaterialTheme.colorScheme.primary
-    val services = remember(primaryColor) {
+    val redBg = StatusRedBg
+    val orangeBg = StatusOrangeBg
+    val services = remember(primaryColor, redBg, orangeBg) {
         listOf(
             GovtServiceTile("औषधि भंडार", "e-Aushadhi", Icons.Default.Inventory, GovtNavyLight, primaryColor, "inventory"),
             GovtServiceTile("कोल्ड चेन", "eVIN Monitor", Icons.Default.AcUnit, Color(0xFFE0F2FE), Color(0xFF0369A1), "cold_chain"),
-            GovtServiceTile("महामारी सतर्कता", "IDSP Portal", Icons.Default.Coronavirus, StatusRedBg, StatusRed, "outbreak_surveillance"),
+            GovtServiceTile("महामारी सतर्कता", "IDSP Portal", Icons.Default.Coronavirus, redBg, StatusRed, "outbreak_surveillance"),
             GovtServiceTile("शय्या व आईसीयू", "HMIS Census", Icons.Default.LocalHospital, TirangaSaffronLight, TirangaSaffron, "beds_staff"),
             GovtServiceTile("ग्रीन कॉरिडोर", "Transit Pass", Icons.Default.LocalShipping, TirangaGreenLight, TirangaGreen, "hospital_map"),
             GovtServiceTile("निर्णय सहायता", "CDSS AI", Icons.Default.Healing, GovtNavyLight, primaryColor, "ai_assistant"),
-            GovtServiceTile("पुनर्वितरण", "RMSCL Requisition", Icons.Default.SwapHoriz, StatusOrangeBg, StatusOrange, "redistribution"),
-            GovtServiceTile("हेल्पलाइन 104", "Toll-Free Tele", Icons.Default.PhoneInTalk, StatusRedBg, StatusRed, "tel:104")
+            GovtServiceTile("पुनर्वितरण", "RMSCL Requisition", Icons.Default.SwapHoriz, orangeBg, StatusOrange, "redistribution"),
+            GovtServiceTile("हेल्पलाइन 104", "Toll-Free Tele", Icons.Default.PhoneInTalk, redBg, StatusRed, "tel:104")
         )
     }
 
@@ -315,17 +317,20 @@ fun GovtServicesGrid(
                                     .padding(vertical = 10.dp, horizontal = 4.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
+                                val isDark = MaterialTheme.colorScheme.background.red < 0.15f
+                                val resolvedIconBg = if (isDark) service.iconTint.copy(alpha = 0.18f) else service.badgeColor
+
                                 Box(
                                     modifier = Modifier
-                                        .size(34.dp)
-                                        .background(service.badgeColor, RoundedCornerShape(6.dp)),
+                                        .size(36.dp)
+                                        .background(resolvedIconBg, RoundedCornerShape(8.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = service.icon,
                                         contentDescription = service.titleHindi,
                                         tint = service.iconTint,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(19.dp)
                                     )
                                 }
 
@@ -333,17 +338,17 @@ fun GovtServicesGrid(
 
                                 Text(
                                     text = service.titleHindi,
-                                    fontSize = 10.sp,
+                                    fontSize = 10.5.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = TextDark,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1
                                 )
 
                                 Text(
                                     text = service.subtitleEng,
-                                    fontSize = 8.sp,
-                                    color = TextMuted,
+                                    fontSize = 8.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1
                                 )
@@ -499,11 +504,12 @@ fun GovtGazetteCirculars() {
 @Composable
 fun GovtEmergencyHelplineBanner() {
     val context = LocalContext.current
+    val isDark = MaterialTheme.colorScheme.background.red < 0.15f
 
     Surface(
-        shape = RoundedCornerShape(4.dp),
-        color = Color(0xFFFEF2F2),
-        border = BorderStroke(1.dp, Color(0xFFFCA5A5)),
+        shape = RoundedCornerShape(6.dp),
+        color = if (isDark) Color(0xFF3B0B0B) else Color(0xFFFEF2F2),
+        border = BorderStroke(1.dp, if (isDark) Color(0xFF7F1D1D) else Color(0xFFFCA5A5)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -513,28 +519,33 @@ fun GovtEmergencyHelplineBanner() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = "Helpline",
-                    tint = StatusRed,
+                    tint = if (isDark) Color(0xFFFCA5A5) else StatusRed,
                     modifier = Modifier.size(16.dp)
                 )
-                Spacer(modifier = Modifier.width(6.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Text(
                         text = "आपातकालीन स्वास्थ्य हेल्पलाइन नंबर (24x7)",
-                        fontSize = 10.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = StatusRed
+                        color = if (isDark) Color(0xFFFCA5A5) else StatusRed
                     )
                     Text(
                         text = "स्वास्थ्य परामर्श: 104 • एम्बुलेंस सेवा: 108 • राज्य आपदा: 1070",
                         fontSize = 9.sp,
-                        color = TextDark
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.width(6.dp))
 
             Button(
                 onClick = {

@@ -19,11 +19,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.arogyagrid.presentation.theme.SlateBorder
 
 /**
  * Authentic Indian Government Informatics Metric Card.
  * Clean, structured, high-legibility tabular tile with a left accent indicator bar.
+ * Fully optimized for vibrant, accessible Dark Mode rendering.
  */
 @Composable
 fun MetricCard(
@@ -35,9 +35,14 @@ fun MetricCard(
     iconTintColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val isDark = MaterialTheme.colorScheme.background.red < 0.15f
+    // In dark mode, ensure container background for the icon has sufficient darkness and doesn't glare
+    val resolvedBgColor = if (isDark) iconTintColor.copy(alpha = 0.18f) else iconBgColor
+    val resolvedTintColor = if (isDark) iconTintColor else iconTintColor
+
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(SlateBorder)),
+        border = CardDefaults.outlinedCardBorder().copy(brush = SolidColor(MaterialTheme.colorScheme.outline)),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(6.dp),
         modifier = modifier
@@ -53,7 +58,7 @@ fun MetricCard(
                 modifier = Modifier
                     .width(4.dp)
                     .fillMaxHeight()
-                    .background(iconTintColor)
+                    .background(resolvedTintColor)
             )
 
             Row(
@@ -65,16 +70,16 @@ fun MetricCard(
                 // Official Square Icon Container
                 Box(
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(iconBgColor)
-                        .border(0.5.dp, SlateBorder, RoundedCornerShape(4.dp)),
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(resolvedBgColor)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = label,
-                        tint = iconTintColor,
+                        tint = resolvedTintColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -84,23 +89,26 @@ fun MetricCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = label,
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1
                     )
+                    Spacer(modifier = Modifier.height(1.dp))
                     Text(
                         text = value,
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onBackground
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        letterSpacing = (-0.3).sp
                     )
                     if (sub != null) {
                         Spacer(modifier = Modifier.height(1.dp))
                         Text(
                             text = sub,
                             fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
+                            fontWeight = FontWeight.Normal,
                             maxLines = 1
                         )
                     }

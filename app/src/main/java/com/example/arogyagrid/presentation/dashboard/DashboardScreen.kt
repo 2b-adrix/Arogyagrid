@@ -43,6 +43,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -204,18 +205,23 @@ fun DashboardScreen(
                                     modifier = Modifier.padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    val isDark = MaterialTheme.colorScheme.background.red < 0.15f
+                                    val alertRed = if (isDark) Color(0xFFF87171) else StatusRed
+                                    val alertBg = if (isDark) Color(0xFF450A0A) else Color(0xFFFEE2E2)
+
                                     Box(
                                         modifier = Modifier
-                                            .size(34.dp)
-                                            .background(StatusRedBg, RoundedCornerShape(4.dp)),
+                                            .size(36.dp)
+                                            .background(alertBg, RoundedCornerShape(6.dp)),
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        Icon(Icons.Default.Coronavirus, contentDescription = null, tint = StatusRed, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Default.Coronavirus, contentDescription = null, tint = alertRed, modifier = Modifier.size(20.dp))
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("राज्य महामारी निगरानी बुलेटिन • आमेर ब्लॉक (Amer Block)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = StatusRed)
-                                        Text("तीव्र अतिसार प्रकोप (+340% मांग वृद्धि) • ओआरएस स्टॉक 38 घंटे में समाप्त होने का पूर्वानुमान। विवरण देखें →", fontSize = 10.5.sp, color = TextDark)
+                                        Text("राज्य महामारी निगरानी बुलेटिन • आमेर ब्लॉक (Amer Block)", fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = alertRed)
+                                        Spacer(modifier = Modifier.height(1.dp))
+                                        Text("तीव्र अतिसार प्रकोप (+340% मांग वृद्धि) • ओआरएस स्टॉक 38 घंटे में समाप्त होने का पूर्वानुमान। विवरण देखें →", fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurface, lineHeight = 14.sp)
                                     }
                                 }
                             }

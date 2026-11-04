@@ -9,30 +9,38 @@ import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryTeal,
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFE0EDF8),
+    onPrimaryContainer = GovtNavyDark,
     secondary = PrimaryTealSoft,
+    onSecondary = Color.White,
     tertiary = AccentBlue,
     background = SlateBg,
-    surface = SlateCard,
-    surfaceVariant = SlateCardVariant,
-    onPrimary = SlateCard,
     onBackground = SlateTextDark,
+    surface = SlateCard,
     onSurface = SlateTextDark,
+    surfaceVariant = SlateCardVariant,
     onSurfaceVariant = SlateTextMuted,
-    outline = SlateBorder
+    outline = SlateBorderLight,
+    outlineVariant = Color(0xFFE2E8F0)
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF38BDF8),
-    secondary = PrimaryTealSoft,
-    tertiary = AccentBlueLight,
-    background = DarkBg,
-    surface = DarkCard,
-    surfaceVariant = DarkCardVariant,
-    onPrimary = Color.Black,
-    onBackground = MidnightTextLight,
-    onSurface = MidnightTextLight,
-    onSurfaceVariant = MidnightTextMuted,
-    outline = DarkBorder
+    primary = Color(0xFF38BDF8),             // Sky 400 - Vivid, high-legibility cyan primary
+    onPrimary = Color(0xFF031628),           // Deep contrast text on primary
+    primaryContainer = Color(0xFF0C2444),    // Rich deep navy container
+    onPrimaryContainer = Color(0xFFBAE6FD),  // Sky 200 readable container text
+    secondary = Color(0xFF60A5FA),           // Blue 400
+    onSecondary = Color(0xFF0F172A),
+    tertiary = Color(0xFFFBBF24),            // Warm amber
+    background = DarkBg,                     // Slate 950 deep canvas
+    onBackground = MidnightTextLight,        // High-contrast clean text
+    surface = DarkCard,                      // Slate 900 card surface
+    onSurface = MidnightTextLight,           // Crisp, clear white-slate text
+    surfaceVariant = DarkCardVariant,        // Slate 800 subtle container
+    onSurfaceVariant = MidnightTextMuted,    // Slate 400 muted text
+    outline = DarkBorder,                    // Slate 700 visible border
+    outlineVariant = Color(0xFF1E293B)
 )
 
 @Composable
