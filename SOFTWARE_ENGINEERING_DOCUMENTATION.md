@@ -7,7 +7,8 @@
 **Submitted By**:
 * **Name**: Aditya Kumar Mishra
 * **Enrollment No.**: Mur2401145
-* **Target Platform**: Android (Native - Jetpack Compose & Clean Architecture)
+* **Target Platform**: Android (Native - Jetpack Compose & Clean Architecture) & Spring Boot 3.3.5 Cloud Backend
+* **Full-Stack Architecture Specification**: [AROGYAGRID_FULL_STACK_DOCUMENTATION.md](file:///C:/Users/vadit/AndroidStudioProjects/ArogyaGrid/AROGYAGRID_FULL_STACK_DOCUMENTATION.md) (Complete with 8 Mermaid Architecture Diagrams, Database ERD, REST APIs, and Algorithmic Proofs)
 
 ---
 

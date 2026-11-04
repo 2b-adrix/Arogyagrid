@@ -8,6 +8,11 @@
 [![OpenStreetMap](https://img.shields.io/badge/Mapping-Osmdroid%206.1.18-brightgreen.svg)](https://github.com/osmdroid/osmdroid)
 [![CameraX & ML Kit](https://img.shields.io/badge/Scanner-CameraX%20%2B%20Google%20ML%20Kit-red.svg)](https://developers.google.com/ml-kit/vision/barcode-scanning)
 [![Tests](https://img.shields.io/badge/Unit%20Tests-11%2F11%20Passing-success.svg)](https://github.com)
+[![Full Stack Docs](https://img.shields.io/badge/Full%20Stack-Architecture%20Doc%20%28760%2B%20lines%29-blueviolet.svg)](file:///C:/Users/vadit/AndroidStudioProjects/ArogyaGrid/AROGYAGRID_FULL_STACK_DOCUMENTATION.md)
+[![Backend Live API](https://img.shields.io/badge/Backend%20Live-Render%20%2B%20Neon%20Postgres-00bcd4.svg)](https://arogyagrid-backend-aus8.onrender.com/api)
+
+> 📚 **Complete Full-Stack Engineering & System Architecture Specification**:  
+> For the complete end-to-end documentation covering both the **Android Client** and **Spring Boot Backend**, including 8 Mermaid architectural diagrams (End-to-End, MVVM, Layered, ERD, Sequence & State Machines), REST API matrices, mathematical algorithms, and database models, please see **[AROGYAGRID_FULL_STACK_DOCUMENTATION.md](file:///C:/Users/vadit/AndroidStudioProjects/ArogyaGrid/AROGYAGRID_FULL_STACK_DOCUMENTATION.md)**.
 
 ---
 
