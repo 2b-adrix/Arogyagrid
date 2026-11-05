@@ -255,9 +255,7 @@ BUILD SUCCESSFUL in 15s
 
 ## 👥 Contributors & Authors
 
-* **Aditya Kumar Mishra** — Mur2401145 (Lead Android & Software Architect)
-* **National Health Mission (NHM) & RMSCL Rajasthan** — Domain Requirements & Data Schema Alignment
-
+* **Aditya Kumar Mishra** — Mur2401145 
 ---
 
 ## 📄 License
